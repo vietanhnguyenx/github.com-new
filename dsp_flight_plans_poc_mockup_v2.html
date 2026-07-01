@@ -943,8 +943,8 @@
                     <!-- Group header -->
                     <tr class="group-row" id="groupRow">
                         <th colspan="2" class="sc1 td-l" style="left:0; padding-left:14px;">Identity</th>
-                        <th colspan="7">Flight Info</th>
-                        <th colspan="5">Release</th>
+                        <th colspan="8">Flight Info</th>
+                        <th colspan="4">Release</th>
                         <th colspan="9">Fuel</th>
                         <th colspan="4">Weight &amp; Time</th>
                         <th colspan="1">-</th>
@@ -953,6 +953,7 @@
                     <tr class="col-row" id="colRow">
                         <th class="sc1 th-l" style="left:0; min-width:80px; padding-left:14px;" data-col="acReg">AC REG</th>
                         <th class="sc2 th-l" style="min-width:78px;" data-col="fltNo">FLT NO</th>
+                        <th style="min-width:74px;" data-tip="OFP Revision number" data-col="ofpRev">OFP REV</th>
                         <th style="min-width:52px;" data-col="dep">DEP</th>
                         <th style="min-width:52px;" data-col="arr">ARR</th>
                         <th style="min-width:64px;" data-col="date">DATE</th>
@@ -960,7 +961,6 @@
                         <th style="min-width:68px;" data-col="eta">ETA (Z)</th>
                         <th style="min-width:48px;" data-col="type">TYPE</th>
                         <th style="min-width:80px;" data-col="status">STATUS</th>
-                        <th style="min-width:74px;" data-tip="OFP Revision number" data-col="ofpRev">OFP REV</th>
                         <th style="min-width:110px;" data-col="dispatcher">DISPATCHER</th>
                         <th style="min-width:88px;" data-tip="DSP Release Time (UTC)" data-col="dspRel">DSP REL</th>
                         <th style="min-width:110px;" data-tip="Pilot in Command" data-col="pic">PIC</th>
@@ -1249,6 +1249,7 @@ function renderTable(data) {
         tr.innerHTML = `
             <td class="sc1 td-l" data-col="acReg" style="padding-left:14px;"><span class="cell-reg">${reg}</span></td>
             <td class="sc2 td-l" data-col="fltNo"><span class="cell-flt">${flt}</span></td>
+            <td data-col="ofpRev">${revBadge(ofpRev, isCurrent)}</td>
             <td class="cell-dim" data-col="dep">${dep}</td>
             <td class="cell-dim" data-col="arr">${arr}</td>
             <td class="cell-dim" data-col="date" style="font-size:10px;">${date}</td>
@@ -1256,7 +1257,6 @@ function renderTable(data) {
             <td class="cell-mono" data-col="eta">${eta}</td>
             <td data-col="type">${typeChip(type)}</td>
             <td data-col="status">${statusPill(status)}</td>
-            <td data-col="ofpRev">${revBadge(ofpRev, isCurrent)}</td>
             <td class="cell-dsp" data-col="dispatcher">${disp}</td>
             <td data-col="dspRel">${timeCell(dspRel)}</td>
             <td class="cell-dsp" data-col="pic" style="font-size:10px;">${pic || '<span class="cell-dash">---</span>'}</td>
