@@ -285,7 +285,7 @@
         /* Collapsible inputs area */
         .filter-inputs {
             overflow: hidden;
-            max-height: 52px;        /* tall enough for one row of inputs */
+            max-height: 80px;        /* tall enough for two rows of inputs */
             opacity: 1;
             transition: max-height .22s ease, opacity .18s ease, padding .22s ease;
         }
@@ -364,10 +364,22 @@
             border-radius: var(--r-md);
             color: var(--text-secondary); font-size: 11px; font-weight: 500;
             cursor: pointer; white-space: nowrap; flex-shrink: 0;
-            margin-left: auto;
-            transition: all .15s;
+            transition: all .15s; position: relative;
         }
         .btn-tbl-setting:hover { color: var(--text-primary); border-color: var(--cyan-border); }
+        .btn-tbl-setting.active { color: var(--cyan); border-color: var(--cyan-border); }
+
+        .btn-export {
+            display: flex; align-items: center; gap: 6px;
+            height: 30px; padding: 0 12px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-light);
+            border-radius: var(--r-md);
+            color: var(--green); font-size: 11px; font-weight: 500;
+            cursor: pointer; white-space: nowrap; flex-shrink: 0;
+            transition: all .15s;
+        }
+        .btn-export:hover { background: var(--green-dim); border-color: rgba(29,214,140,.4); }
 
         .collapse-btn {
             width: 24px; height: 24px;
@@ -379,6 +391,98 @@
         .collapse-btn:hover { color: var(--text-primary); }
         .collapse-btn svg { transition: transform .2s; }
         .collapse-btn.flipped svg { transform: rotate(180deg); }
+
+        /* ========= TABLE SETTING PANEL ========= */
+        .tbl-setting-panel {
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            width: 220px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-light);
+            border-radius: var(--r-lg);
+            box-shadow: 0 12px 40px rgba(0,0,0,.5);
+            z-index: 200;
+            padding: 10px 0;
+            display: none;
+        }
+        .tbl-setting-panel.open { display: block; }
+        .tbl-setting-title {
+            font-size: 9px; font-weight: 700; letter-spacing: .1em;
+            text-transform: uppercase; color: var(--text-muted);
+            padding: 0 12px 6px; border-bottom: 1px solid var(--border);
+            margin-bottom: 6px;
+        }
+        .tbl-setting-item {
+            display: flex; align-items: center; gap: 8px;
+            padding: 5px 12px; cursor: pointer;
+            transition: background .12s;
+        }
+        .tbl-setting-item:hover { background: var(--bg-hover); }
+        .tbl-setting-item input[type=checkbox] {
+            accent-color: var(--cyan);
+            width: 13px; height: 13px; cursor: pointer; flex-shrink: 0;
+        }
+        .tbl-setting-item label {
+            font-size: 11px; color: var(--text-secondary); cursor: pointer;
+        }
+        .tbl-setting-divider { height: 1px; background: var(--border); margin: 6px 0; }
+        .tbl-setting-footer {
+            padding: 6px 12px 0;
+            display: flex; gap: 6px;
+        }
+        .tbl-setting-footer button {
+            flex: 1; height: 26px; border-radius: var(--r-md);
+            font-size: 10px; font-weight: 600; cursor: pointer; border: none;
+            transition: opacity .14s;
+        }
+        .tbl-sf-apply { background: var(--cyan); color: #0B0E1A; }
+        .tbl-sf-apply:hover { opacity: .85; }
+        .tbl-sf-reset { background: var(--bg-surface); color: var(--text-secondary); border: 1px solid var(--border-light) !important; }
+        .tbl-sf-reset:hover { color: var(--text-primary); }
+
+        /* ========= TOAST NOTIFICATION ========= */
+        .toast-wrap {
+            position: fixed; bottom: 40px; right: 24px;
+            display: flex; flex-direction: column; gap: 8px;
+            z-index: 9999; pointer-events: none;
+        }
+        .toast {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 16px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-light);
+            border-left: 3px solid var(--green);
+            border-radius: var(--r-lg);
+            box-shadow: 0 8px 32px rgba(0,0,0,.5);
+            font-size: 12px; color: var(--text-primary);
+            min-width: 240px; max-width: 360px;
+            animation: toastIn .22s ease forwards;
+            pointer-events: all;
+        }
+        .toast.toast-warn { border-left-color: var(--orange); }
+        .toast.toast-error { border-left-color: var(--red); }
+        .toast-icon { font-size: 15px; flex-shrink: 0; }
+        .toast-msg { flex: 1; }
+        .toast-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 13px; padding: 0 2px; }
+        .toast-close:hover { color: var(--text-primary); }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ========= RELEASE BUTTON ========= */
+        .btn-release {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 3px 9px;
+            border: 1px solid rgba(29,214,140,.4);
+            border-radius: var(--r-sm);
+            background: none; color: var(--green);
+            font-size: 10px; font-weight: 600;
+            cursor: pointer; white-space: nowrap;
+            transition: background .14s;
+        }
+        .btn-release:hover { background: var(--green-dim); }
 
         /* ========= TABLE ========= */
         .table-wrap { flex: 1; overflow: auto; position: relative; }
@@ -711,7 +815,7 @@
         <!-- FILTER BAR -->
         <div class="filter-bar">
 
-            <!-- Always-visible strip: label + Table Setting + chevron -->
+            <!-- Always-visible strip: label + Export + Table Setting + chevron -->
             <div class="filter-strip">
                 <span class="fi">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -720,17 +824,39 @@
                 </span>
                 <span class="filter-lbl">Filter</span>
                 <div class="filter-strip-right">
-                    <button class="btn-tbl-setting">
+                    <button class="btn-export" onclick="exportExcel()">
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="8" y1="6"  x2="21" y2="6"/>
-                            <line x1="8" y1="12" x2="21" y2="12"/>
-                            <line x1="8" y1="18" x2="21" y2="18"/>
-                            <line x1="3" y1="6"  x2="3.01" y2="6"/>
-                            <line x1="3" y1="12" x2="3.01" y2="12"/>
-                            <line x1="3" y1="18" x2="3.01" y2="18"/>
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14,2 14,8 20,8"/>
+                            <line x1="12" y1="18" x2="12" y2="12"/>
+                            <line x1="9" y1="15" x2="12" y2="18" />
+                            <line x1="15" y1="15" x2="12" y2="18" />
                         </svg>
-                        Table Setting
+                        Export Excel
                     </button>
+                    <div style="position:relative;">
+                        <button class="btn-tbl-setting" id="btnTblSetting" onclick="toggleTableSetting()">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="8" y1="6"  x2="21" y2="6"/>
+                                <line x1="8" y1="12" x2="21" y2="12"/>
+                                <line x1="8" y1="18" x2="21" y2="18"/>
+                                <line x1="3" y1="6"  x2="3.01" y2="6"/>
+                                <line x1="3" y1="12" x2="3.01" y2="12"/>
+                                <line x1="3" y1="18" x2="3.01" y2="18"/>
+                            </svg>
+                            Table Setting
+                        </button>
+                        <div class="tbl-setting-panel" id="tblSettingPanel">
+                            <div class="tbl-setting-title">Columns Visibility</div>
+                            <!-- checkboxes injected by JS -->
+                            <div id="tblColChecks"></div>
+                            <div class="tbl-setting-divider"></div>
+                            <div class="tbl-setting-footer">
+                                <button class="tbl-sf-reset" onclick="resetColumns()">Reset</button>
+                                <button class="tbl-sf-apply" onclick="applyColumns()">Apply</button>
+                            </div>
+                        </div>
+                    </div>
                     <button class="collapse-btn" id="collapseBtn" onclick="toggleFilter()">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                             <polyline points="18,15 12,9 6,15"/>
@@ -766,14 +892,24 @@
                         <option value="ICN">ICN (RKSI)</option>
                     </select>
 
-                    <select class="f-select" id="fDsp" style="width:120px">
-                        <option value="">Dispatcher</option>
-                        <option>DAO V. ANAM</option>
-                        <option>NGUYEN T. BINH</option>
-                        <option>TRAN V. CUONG</option>
-                        <option>LE T. DUNG</option>
-                        <option>PHAM V. EM</option>
+                    <input type="text" class="f-input" id="fEtd" placeholder="ETD (Z)" style="width:80px" title="ETD filter (e.g. 00:30)">
+                    <input type="text" class="f-input" id="fEta" placeholder="ETA (Z)" style="width:80px" title="ETA filter (e.g. 14:52)">
+
+                    <select class="f-select" id="fType" style="width:80px">
+                        <option value="">TYPE</option>
+                        <option value="J">J</option>
+                        <option value="V">V</option>
                     </select>
+
+                    <select class="f-select" id="fStatus" style="width:90px">
+                        <option value="">STATUS</option>
+                        <option value="PLN">PLN</option>
+                        <option value="REL">REL</option>
+                        <option value="REV">REV</option>
+                        <option value="CXL">CXL</option>
+                    </select>
+
+                    <input type="text" class="f-input" id="fDsp" placeholder="Dispatcher" style="width:120px" title="Search dispatcher name">
 
                     <div class="rev-toggle">
                         <button class="rev-btn" id="btnRevAll"  onclick="setRevMode('all')">All Revision</button>
@@ -815,34 +951,34 @@
                     </tr>
                     <!-- Column header -->
                     <tr class="col-row" id="colRow">
-                        <th class="sc1 th-l" style="left:0; min-width:80px; padding-left:14px;">AC REG</th>
-                        <th class="sc2 th-l" style="min-width:78px;">FLT NO</th>
-                        <th style="min-width:52px;">DEP</th>
-                        <th style="min-width:52px;">ARR</th>
-                        <th style="min-width:64px;">DATE</th>
-                        <th style="min-width:68px;">ETD (Z)</th>
-                        <th style="min-width:68px;">ETA (Z)</th>
-                        <th style="min-width:48px;">TYPE</th>
-                        <th style="min-width:80px;">STATUS</th>
-                        <th style="min-width:74px;" data-tip="OFP Revision number">OFP REV</th>
-                        <th style="min-width:110px;">DISPATCHER</th>
-                        <th style="min-width:88px;" data-tip="DSP Release Time (UTC)">DSP REL</th>
-                        <th style="min-width:88px;" data-tip="Pilot Release Time (UTC)">PIL REL</th>
-                        <th style="min-width:72px;" data-tip="Pilot Release Revision">PIL REV</th>
-                        <th style="min-width:84px;" data-tip="OFP Block Fuel (kg)">BLOCK FUEL</th>
-                        <th style="min-width:84px;" data-tip="Fuel Order (kg)">FUEL ORDER</th>
-                        <th style="min-width:78px;" data-tip="Trip Fuel (kg)">TRIP FUEL</th>
-                        <th style="min-width:70px;" data-tip="Trip Time (HH:MM)">TRIP TIME</th>
-                        <th style="min-width:56px;" data-tip="Contingency percentage">CONT %</th>
-                        <th style="min-width:72px;" data-tip="Destination Alternate airport">DEST ALTN</th>
-                        <th style="min-width:82px;" data-tip="Dest Alternate Fuel (kg)">ALTN FUEL</th>
-                        <th style="min-width:68px;" data-tip="Taxi-out Time (HH:MM)">TAXI TIME</th>
-                        <th style="min-width:74px;" data-tip="Taxi Fuel (kg)">TAXI FUEL</th>
-                        <th style="min-width:84px;" data-tip="Possible Extra fuel (kg)">POSS EXTRA</th>
-                        <th style="min-width:74px;" data-tip="Dry Operating Weight (kg)">DOW</th>
-                        <th style="min-width:72px;" data-tip="Payload (kg)">PLD</th>
-                        <th style="min-width:76px;" data-tip="Take-Off Weight (kg)">TOW</th>
-                        <th style="min-width:116px; padding-right:16px;">ACTION</th>
+                        <th class="sc1 th-l" style="left:0; min-width:80px; padding-left:14px;" data-col="acReg">AC REG</th>
+                        <th class="sc2 th-l" style="min-width:78px;" data-col="fltNo">FLT NO</th>
+                        <th style="min-width:52px;" data-col="dep">DEP</th>
+                        <th style="min-width:52px;" data-col="arr">ARR</th>
+                        <th style="min-width:64px;" data-col="date">DATE</th>
+                        <th style="min-width:68px;" data-col="etd">ETD (Z)</th>
+                        <th style="min-width:68px;" data-col="eta">ETA (Z)</th>
+                        <th style="min-width:48px;" data-col="type">TYPE</th>
+                        <th style="min-width:80px;" data-col="status">STATUS</th>
+                        <th style="min-width:74px;" data-tip="OFP Revision number" data-col="ofpRev">OFP REV</th>
+                        <th style="min-width:110px;" data-col="dispatcher">DISPATCHER</th>
+                        <th style="min-width:88px;" data-tip="DSP Release Time (UTC)" data-col="dspRel">DSP REL</th>
+                        <th style="min-width:110px;" data-tip="Pilot in Command" data-col="pic">PIC</th>
+                        <th style="min-width:88px;" data-tip="Pilot Release Time (UTC)" data-col="pilRel">PIL REL</th>
+                        <th style="min-width:84px;" data-tip="OFP Block Fuel (kg)" data-col="blkFuel">BLOCK FUEL</th>
+                        <th style="min-width:84px;" data-tip="Fuel Order (kg)" data-col="fuelOrd">FUEL ORDER</th>
+                        <th style="min-width:78px;" data-tip="Trip Fuel (kg)" data-col="tripFuel">TRIP FUEL</th>
+                        <th style="min-width:70px;" data-tip="Trip Time (HH:MM)" data-col="tripTime">TRIP TIME</th>
+                        <th style="min-width:56px;" data-tip="Contingency percentage" data-col="cont">CONT %</th>
+                        <th style="min-width:72px;" data-tip="Destination Alternate airport" data-col="destAltn">DEST ALTN</th>
+                        <th style="min-width:82px;" data-tip="Dest Alternate Fuel (kg)" data-col="altnFuel">ALTN FUEL</th>
+                        <th style="min-width:68px;" data-tip="Taxi-out Time (HH:MM)" data-col="taxiTime">TAXI TIME</th>
+                        <th style="min-width:74px;" data-tip="Taxi Fuel (kg)" data-col="taxiFuel">TAXI FUEL</th>
+                        <th style="min-width:84px;" data-tip="Possible Extra fuel (kg)" data-col="possExtra">POSS EXTRA</th>
+                        <th style="min-width:74px;" data-tip="Dry Operating Weight (kg)" data-col="dow">DOW</th>
+                        <th style="min-width:72px;" data-tip="Payload (kg)" data-col="pld">PLD</th>
+                        <th style="min-width:76px;" data-tip="Take-Off Weight (kg)" data-col="tow">TOW</th>
+                        <th style="min-width:148px; padding-right:16px;" data-col="action">ACTION</th>
                     </tr>
                 </thead>
                 <tbody id="tbody"></tbody>
@@ -856,11 +992,14 @@
                 <span>Live</span>
             </div>
             <span>Showing: <b id="cntShow" style="color:var(--text-primary)">0</b> / <span id="cntTotal">0</span> flight plans</span>
-            <span class="sb-right">TOSS POC - Flight Plans v1.0 (UTC)</span>
+            <span class="sb-right">TOSS POC - Flight Plans v2.1 (UTC)</span>
         </div>
 
     </div><!-- end .main -->
 </div><!-- end .app -->
+
+<!-- Toast container -->
+<div class="toast-wrap" id="toastWrap"></div>
 
 <!-- ============ BRIEFING SHEET MODAL ============ -->
 <dialog id="briefModal">
@@ -953,39 +1092,47 @@ function setRevMode(mode) {
 /* =========================================================
    DATA
    ========================================================= */
+// PIC pool for realistic pilot names
+const PIC_NAMES = [
+    'NGUYEN V. TIEN', 'TRAN D. QUYET', 'LE H. NAM', 'PHAM Q. HUNG',
+    'DO M. TUAN', 'VU D. DUNG', 'HOANG V. LONG', 'NGUYEN T. KHANH',
+    'TRAN V. PHONG', 'LE Q. ANH'
+];
+function rndPic(seed) { return PIC_NAMES[seed % PIC_NAMES.length]; }
+
 const SAMPLE = [
-    // reg,      flt,    dep,   arr,   acType, date,     etd,    eta,    type, status,  ofpRev, dspRel,  pilRel,  pilRev, blkFuel, fuelOrd, tripFuel, tripTime, cont, destAltn, altnFuel, taxiTime, taxiFuel, possExtra, dow,    pld,    tow,     disp
-    ['VN-A123', 'VN120', 'SGN', 'HAN', 'A321', '24 Jun', '00:30','02:15','J','REL', 'R02','23:45','23:55','R02', 8500, 8800, 6200, '01:45', '5%', 'VVDN', 1050, '0:25',  450,  +180, 42150, 18500, 62800, 'DAO V. ANAM'],
-    ['VN-A321', 'VN220', 'HAN', 'SGN', 'A321', '24 Jun', '01:00','02:50','V','REL', 'R02','00:10','00:22','R02', 8700, 9000, 6400, '01:48', '5%', 'VVTS', 1100, '0:22',  420,  +210, 42300, 17800, 63100, 'NGUYEN T. BINH'],
-    ['VN-B456', 'VN340', 'SGN', 'DAD', 'B787', '24 Jun', '03:15','04:20','J','REL', 'R02','02:55','03:05','R02', 4800, 5000, 3500, '01:05', '3%', 'VVNB', 780,  '0:18',  310,    +90, 48200, 22100, 72500, 'TRAN V. CUONG'],
-    ['VN-A144', 'VN456', 'DAD', 'HAN', 'A321', '24 Jun', '04:45','05:55','J','REV', 'R01','04:10','04:28','R01', 5200, 5400, 3800, '01:10', '5%', 'VVTS', 820,  '0:20',  340,   -150, 42050, 16900, 61200, 'LE T. DUNG'],
-    ['VN-A588', 'VN568', 'SGN', 'HKG', 'A321', '24 Jun', '06:00','08:45','J','REL', 'R02','05:30','05:48','R02',14200,14800,10500, '02:45', '5%', 'VHHX',1850,  '0:25',  450,  +320, 42400, 20200, 74800, 'PHAM V. EM'],
-    ['VN-B787', 'VN608', 'HAN', 'ICN', 'B787', '24 Jun', '07:30','11:50','V','PLN', null, null,   null,   null, 22500,23000,16800, '04:20', '3%', 'RKPC',2400,  '0:30',  580,     0, 51000, 28500, 99800, 'DAO V. ANAM'],
-    ['VN-A381', 'VN720', 'SGN', 'HAN', 'A320', '24 Jun', '09:10','10:55','J','REL', 'R02','08:40','08:55','R02', 8300, 8600, 6100, '01:45', '5%', 'VVDN',1020,  '0:22',  400,  +160, 40800, 17200, 61000, 'NGUYEN T. BINH'],
-    ['VN-B190', 'VN832', 'HAN', 'PQC', 'B787', '24 Jun', '10:20','11:50','J','REL', 'R02','09:55','10:10','R02', 6800, 7100, 5000, '01:30', '3%', 'VVTS', 950,  '0:28',  500,  +100, 48800, 19500, 72800, 'TRAN V. CUONG'],
-    ['VN-A777', 'VN944', 'SGN', 'CXR', 'A321', '24 Jun', '11:45','13:00','J','REL', 'R02','11:20','11:32','R02', 5600, 5800, 4100, '01:15', '5%', 'VVPQ', 880,  '0:20',  360,   +70, 41900, 16800, 60800, 'LE T. DUNG'],
-    ['VN-B350', 'VN052', 'HAN', 'SGN', 'A350', '24 Jun', '13:00','14:52','J','REV', 'R01','12:25','12:44','R02', 9200, 9600, 6800, '01:52', '5%', 'VVDN',1080,  '0:26',  460,  -200, 46200, 20800, 74800, 'PHAM V. EM'],
-    ['VN-A201', 'VN164', 'SGN', 'NRT', 'A321', '24 Jun', '14:10','19:20','J','PLN', null, null,   null,   null, 30500,31200,22800, '05:10', '5%', 'RJAA',3200,  '0:28',  520,     0, 42600, 24500, 93000, 'DAO V. ANAM'],
-    ['VN-A332', 'VN278', 'HAN', 'DAD', 'A330', '24 Jun', '15:30','16:42','V','CXL', 'R02','14:55','15:10','R02', 4900, 5100, 3600, '01:12', '3%', 'VVTS', 800,  '0:18',  320,  +140, 44500, 18200, 65000, 'NGUYEN T. BINH'],
-    ['VN-A099', 'VN386', 'SGN', 'PQC', 'A321', '24 Jun', '16:00','17:30','J','REL', 'R02','15:32','15:48','R02', 6100, 6300, 4500, '01:28', '5%', 'VVDN', 920,  '0:22',  400,  +120, 42200, 17600, 62200, 'TRAN V. CUONG'],
-    ['VN-A211', 'VN492', 'DAD', 'SGN', 'A321', '24 Jun', '16:20','17:25','J','REL', 'R02','15:55','16:08','R02', 4700, 4900, 3400, '01:05', '3%', 'VVNB', 760,  '0:18',  310,   +80, 41800, 16400, 60200, 'LE T. DUNG'],
-    ['VN-B211', 'VN550', 'SGN', 'BKK', 'B787', '24 Jun', '16:45','18:30','J','REL', 'R02','16:10','16:28','R02',10800,11200, 8200, '01:45', '5%', 'VTBD',1600,  '0:26',  480,  +240, 49100, 24800, 80600, 'PHAM V. EM'],
-    ['VN-A088', 'VN604', 'HAN', 'SGN', 'A320', '24 Jun', '17:10','19:02','J','REV', 'R01','16:40','16:58','R01', 8400, 8700, 6200, '01:48', '5%', 'VVDN',1030,  '0:22',  400,  -180, 40900, 17500, 62000, 'DAO V. ANAM'],
-    ['VN-A455', 'VN716', 'SGN', 'HAN', 'A321', '24 Jun', '17:30','19:15','V','REL', 'R02','17:00','17:14','R02', 8600, 9000, 6300, '01:45', '5%', 'VVDN',1040,  '0:25',  440,  +280, 42500, 19800, 64400, 'NGUYEN T. BINH'],
-    ['VN-B322', 'VN790', 'HAN', 'PVG', 'B787', '24 Jun', '18:00','21:30','J','REL', 'R02','17:25','17:40','R02',17200,17800,12800, '03:30', '3%', 'ZSPD',2100,  '0:28',  520,  +150, 50200, 26400, 91800, 'TRAN V. CUONG'],
-    ['VN-A566', 'VN840', 'SGN', 'CXR', 'A321', '24 Jun', '18:20','19:35','J','PLN', null, null,   null,   null, 5700, 5900, 4200, '01:15', '5%', 'VVPQ', 890,  '0:20',  360,     0, 42100, 16200, 60700, 'LE T. DUNG'],
-    ['VN-A630', 'VN858', 'HAN', 'DAD', 'A321', '24 Jun', '18:40','19:52','J','REL', 'R02','18:10','18:22','R02', 4800, 5000, 3500, '01:12', '3%', 'VVTS', 790,  '0:18',  310,  +110, 42050, 17100, 61500, 'PHAM V. EM'],
-    ['VN-B410', 'VN910', 'SGN', 'KUL', 'B787', '24 Jun', '19:10','21:50','J','REL', 'R02','18:38','18:55','R02',11500,11900, 8700, '02:40', '5%', 'WSSS',1700,  '0:26',  490,  +200, 49300, 25200, 82400, 'DAO V. ANAM'],
-    ['VN-A722', 'VN974', 'HAN', 'SGN', 'A321', '24 Jun', '19:30','21:20','J','REL', 'R02','19:00','19:12','R02', 8550, 8900, 6250, '01:48', '5%', 'VVDN',1040,  '0:24',  430,   +90, 42200, 17900, 62700, 'NGUYEN T. BINH'],
-    ['VN-A801', 'VN026', 'SGN', 'HAN', 'A321', '24 Jun', '20:00','21:45','V','PLN', null, null,   null,   null, 8600, 8900, 6300, '01:45', '5%', 'VVDN',1050,  '0:25',  450,     0, 42400, 20500, 65000, 'TRAN V. CUONG'],
-    ['VN-B533', 'VN042', 'HAN', 'SIN', 'B787', '24 Jun', '20:15','23:00','J','REL', 'R02','19:42','19:58','R02',12800,13200, 9600, '02:45', '3%', 'WMKK',1800,  '0:28',  510,  +260, 49800, 27600, 87600, 'LE T. DUNG'],
-    ['VN-A312', 'VN076', 'SGN', 'BMV', 'A321', '24 Jun', '20:45','21:45','J','REL', 'R02','20:18','20:30','R02', 4200, 4400, 3050, '01:00', '5%', 'VVDN', 720,  '0:18',  300,   +60, 41700, 15800, 59400, 'PHAM V. EM'],
-    ['VN-A944', 'VN108', 'HAN', 'PQC', 'A320', '24 Jun', '21:00','22:35','J','REV', 'R01','20:28','20:45','R02', 6700, 6900, 4900, '01:32', '5%', 'VVTS', 940,  '0:22',  390,  -120, 40700, 16900, 60500, 'DAO V. ANAM'],
-    ['VN-B620', 'VN122', 'SGN', 'HKG', 'B787', '24 Jun', '21:30','00:15','J','REL', 'R02','20:58','21:12','R02',14500,15000,10800, '02:45', '3%', 'VHHX',1900,  '0:26',  480,  +300, 49500, 26800, 88500, 'NGUYEN T. BINH'],
-    ['VN-A155', 'VN136', 'HAN', 'SGN', 'A321', '24 Jun', '22:00','23:48','J','REL', 'R02','21:30','21:44','R02', 8650, 9000, 6350, '01:48', '5%', 'VVDN',1060,  '0:24',  440,  +130, 42100, 18300, 63200, 'TRAN V. CUONG'],
-    ['VN-A267', 'VN154', 'SGN', 'DAD', 'A321', '24 Jun', '22:30','23:35','J','PLN', null, null,   null,   null, 4800, 5000, 3500, '01:05', '3%', 'VVNB', 780,  '0:18',  310,     0, 42000, 16100, 60000, 'LE T. DUNG'],
-    ['VN-B701', 'VN172', 'HAN', 'FRA', 'B787', '24 Jun', '23:00','05:20','J','REL', 'R02','22:22','22:40','R02',62500,63500,47200, '11:20', '5%', 'EDDF',5800,  '0:30',  620,  +450, 51200, 31800,145800, 'PHAM V. EM'],
-    ['VN-A388', 'VN188', 'SGN', 'HAN', 'A320', '24 Jun', '23:30','01:18','J','REL', 'R02','23:00','23:14','R02', 8200, 8500, 6000, '01:45', '5%', 'VVDN',1010,  '0:22',  390,   +70, 40600, 17000, 60200, 'DAO V. ANAM'],
+    // reg,      flt,    dep,   arr,   acType, date,     etd,    eta,    type, status,  ofpRev, dspRel,  pilRel,  pic,                blkFuel, fuelOrd, tripFuel, tripTime, cont, destAltn, altnFuel, taxiTime, taxiFuel, possExtra, dow,    pld,    tow,     disp
+    ['VN-A123', 'VN120', 'SGN', 'HAN', 'A321', '24 Jun', '00:30','02:15','J','REL', 'R02','23:45','23:55', rndPic(0),  8500, 8800, 6200, '01:45', '5%', 'VVDN', 1050, '0:25',  450,  +180, 42150, 18500, 62800, 'DAO V. ANAM'],
+    ['VN-A321', 'VN220', 'HAN', 'SGN', 'A321', '24 Jun', '01:00','02:50','V','REL', 'R02','00:10','00:22', rndPic(1),  8700, 9000, 6400, '01:48', '5%', 'VVTS', 1100, '0:22',  420,  +210, 42300, 17800, 63100, 'NGUYEN T. BINH'],
+    ['VN-B456', 'VN340', 'SGN', 'DAD', 'B787', '24 Jun', '03:15','04:20','J','REL', 'R02','02:55','03:05', rndPic(2),  4800, 5000, 3500, '01:05', '3%', 'VVNB', 780,  '0:18',  310,    +90, 48200, 22100, 72500, 'TRAN V. CUONG'],
+    ['VN-A144', 'VN456', 'DAD', 'HAN', 'A321', '24 Jun', '04:45','05:55','J','REV', 'R01','04:10','04:28', rndPic(3),  5200, 5400, 3800, '01:10', '5%', 'VVTS', 820,  '0:20',  340,   -150, 42050, 16900, 61200, 'LE T. DUNG'],
+    ['VN-A588', 'VN568', 'SGN', 'HKG', 'A321', '24 Jun', '06:00','08:45','J','REL', 'R02','05:30','05:48', rndPic(4), 14200,14800,10500, '02:45', '5%', 'VHHX',1850,  '0:25',  450,  +320, 42400, 20200, 74800, 'PHAM V. EM'],
+    ['VN-B787', 'VN608', 'HAN', 'ICN', 'B787', '24 Jun', '07:30','11:50','V','PLN', null, null,   null,   rndPic(5), 22500,23000,16800, '04:20', '3%', 'RKPC',2400,  '0:30',  580,     0, 51000, 28500, 99800, 'DAO V. ANAM'],
+    ['VN-A381', 'VN720', 'SGN', 'HAN', 'A320', '24 Jun', '09:10','10:55','J','REL', 'R02','08:40','08:55', rndPic(6),  8300, 8600, 6100, '01:45', '5%', 'VVDN',1020,  '0:22',  400,  +160, 40800, 17200, 61000, 'NGUYEN T. BINH'],
+    ['VN-B190', 'VN832', 'HAN', 'PQC', 'B787', '24 Jun', '10:20','11:50','J','REL', 'R02','09:55','10:10', rndPic(7),  6800, 7100, 5000, '01:30', '3%', 'VVTS', 950,  '0:28',  500,  +100, 48800, 19500, 72800, 'TRAN V. CUONG'],
+    ['VN-A777', 'VN944', 'SGN', 'CXR', 'A321', '24 Jun', '11:45','13:00','J','REL', 'R02','11:20','11:32', rndPic(8),  5600, 5800, 4100, '01:15', '5%', 'VVPQ', 880,  '0:20',  360,   +70, 41900, 16800, 60800, 'LE T. DUNG'],
+    ['VN-B350', 'VN052', 'HAN', 'SGN', 'A350', '24 Jun', '13:00','14:52','J','REV', 'R01','12:25','12:44', rndPic(9),  9200, 9600, 6800, '01:52', '5%', 'VVDN',1080,  '0:26',  460,  -200, 46200, 20800, 74800, 'PHAM V. EM'],
+    ['VN-A201', 'VN164', 'SGN', 'NRT', 'A321', '24 Jun', '14:10','19:20','J','PLN', null, null,   null,   rndPic(0), 30500,31200,22800, '05:10', '5%', 'RJAA',3200,  '0:28',  520,     0, 42600, 24500, 93000, 'DAO V. ANAM'],
+    ['VN-A332', 'VN278', 'HAN', 'DAD', 'A330', '24 Jun', '15:30','16:42','V','CXL', 'R02','14:55','15:10', rndPic(1),  4900, 5100, 3600, '01:12', '3%', 'VVTS', 800,  '0:18',  320,  +140, 44500, 18200, 65000, 'NGUYEN T. BINH'],
+    ['VN-A099', 'VN386', 'SGN', 'PQC', 'A321', '24 Jun', '16:00','17:30','J','REL', 'R02','15:32','15:48', rndPic(2),  6100, 6300, 4500, '01:28', '5%', 'VVDN', 920,  '0:22',  400,  +120, 42200, 17600, 62200, 'TRAN V. CUONG'],
+    ['VN-A211', 'VN492', 'DAD', 'SGN', 'A321', '24 Jun', '16:20','17:25','J','REL', 'R02','15:55','16:08', rndPic(3),  4700, 4900, 3400, '01:05', '3%', 'VVNB', 760,  '0:18',  310,   +80, 41800, 16400, 60200, 'LE T. DUNG'],
+    ['VN-B211', 'VN550', 'SGN', 'BKK', 'B787', '24 Jun', '16:45','18:30','J','REL', 'R02','16:10','16:28', rndPic(4), 10800,11200, 8200, '01:45', '5%', 'VTBD',1600,  '0:26',  480,  +240, 49100, 24800, 80600, 'PHAM V. EM'],
+    ['VN-A088', 'VN604', 'HAN', 'SGN', 'A320', '24 Jun', '17:10','19:02','J','REV', 'R01','16:40','16:58', rndPic(5),  8400, 8700, 6200, '01:48', '5%', 'VVDN',1030,  '0:22',  400,  -180, 40900, 17500, 62000, 'DAO V. ANAM'],
+    ['VN-A455', 'VN716', 'SGN', 'HAN', 'A321', '24 Jun', '17:30','19:15','V','REL', 'R02','17:00','17:14', rndPic(6),  8600, 9000, 6300, '01:45', '5%', 'VVDN',1040,  '0:25',  440,  +280, 42500, 19800, 64400, 'NGUYEN T. BINH'],
+    ['VN-B322', 'VN790', 'HAN', 'PVG', 'B787', '24 Jun', '18:00','21:30','J','REL', 'R02','17:25','17:40', rndPic(7), 17200,17800,12800, '03:30', '3%', 'ZSPD',2100,  '0:28',  520,  +150, 50200, 26400, 91800, 'TRAN V. CUONG'],
+    ['VN-A566', 'VN840', 'SGN', 'CXR', 'A321', '24 Jun', '18:20','19:35','J','PLN', null, null,   null,   rndPic(8),  5700, 5900, 4200, '01:15', '5%', 'VVPQ', 890,  '0:20',  360,     0, 42100, 16200, 60700, 'LE T. DUNG'],
+    ['VN-A630', 'VN858', 'HAN', 'DAD', 'A321', '24 Jun', '18:40','19:52','J','REL', 'R02','18:10','18:22', rndPic(9),  4800, 5000, 3500, '01:12', '3%', 'VVTS', 790,  '0:18',  310,  +110, 42050, 17100, 61500, 'PHAM V. EM'],
+    ['VN-B410', 'VN910', 'SGN', 'KUL', 'B787', '24 Jun', '19:10','21:50','J','REL', 'R02','18:38','18:55', rndPic(0), 11500,11900, 8700, '02:40', '5%', 'WSSS',1700,  '0:26',  490,  +200, 49300, 25200, 82400, 'DAO V. ANAM'],
+    ['VN-A722', 'VN974', 'HAN', 'SGN', 'A321', '24 Jun', '19:30','21:20','J','REL', 'R02','19:00','19:12', rndPic(1),  8550, 8900, 6250, '01:48', '5%', 'VVDN',1040,  '0:24',  430,   +90, 42200, 17900, 62700, 'NGUYEN T. BINH'],
+    ['VN-A801', 'VN026', 'SGN', 'HAN', 'A321', '24 Jun', '20:00','21:45','V','PLN', null, null,   null,   rndPic(2),  8600, 8900, 6300, '01:45', '5%', 'VVDN',1050,  '0:25',  450,     0, 42400, 20500, 65000, 'TRAN V. CUONG'],
+    ['VN-B533', 'VN042', 'HAN', 'SIN', 'B787', '24 Jun', '20:15','23:00','J','REL', 'R02','19:42','19:58', rndPic(3), 12800,13200, 9600, '02:45', '3%', 'WMKK',1800,  '0:28',  510,  +260, 49800, 27600, 87600, 'LE T. DUNG'],
+    ['VN-A312', 'VN076', 'SGN', 'BMV', 'A321', '24 Jun', '20:45','21:45','J','REL', 'R02','20:18','20:30', rndPic(4),  4200, 4400, 3050, '01:00', '5%', 'VVDN', 720,  '0:18',  300,   +60, 41700, 15800, 59400, 'PHAM V. EM'],
+    ['VN-A944', 'VN108', 'HAN', 'PQC', 'A320', '24 Jun', '21:00','22:35','J','REV', 'R01','20:28','20:45', rndPic(5),  6700, 6900, 4900, '01:32', '5%', 'VVTS', 940,  '0:22',  390,  -120, 40700, 16900, 60500, 'DAO V. ANAM'],
+    ['VN-B620', 'VN122', 'SGN', 'HKG', 'B787', '24 Jun', '21:30','00:15','J','REL', 'R02','20:58','21:12', rndPic(6), 14500,15000,10800, '02:45', '3%', 'VHHX',1900,  '0:26',  480,  +300, 49500, 26800, 88500, 'NGUYEN T. BINH'],
+    ['VN-A155', 'VN136', 'HAN', 'SGN', 'A321', '24 Jun', '22:00','23:48','J','REL', 'R02','21:30','21:44', rndPic(7),  8650, 9000, 6350, '01:48', '5%', 'VVDN',1060,  '0:24',  440,  +130, 42100, 18300, 63200, 'TRAN V. CUONG'],
+    ['VN-A267', 'VN154', 'SGN', 'DAD', 'A321', '24 Jun', '22:30','23:35','J','PLN', null, null,   null,   rndPic(8),  4800, 5000, 3500, '01:05', '3%', 'VVNB', 780,  '0:18',  310,     0, 42000, 16100, 60000, 'LE T. DUNG'],
+    ['VN-B701', 'VN172', 'HAN', 'FRA', 'B787', '24 Jun', '23:00','05:20','J','REL', 'R02','22:22','22:40', rndPic(9), 62500,63500,47200, '11:20', '5%', 'EDDF',5800,  '0:30',  620,  +450, 51200, 31800,145800, 'PHAM V. EM'],
+    ['VN-A388', 'VN188', 'SGN', 'HAN', 'A320', '24 Jun', '23:30','01:18','J','REL', 'R02','23:00','23:14', rndPic(0),  8200, 8500, 6000, '01:45', '5%', 'VVDN',1010,  '0:22',  390,   +70, 40600, 17000, 60200, 'DAO V. ANAM'],
 ];
 
 /* each row can have multiple revisions for "All Revision" mode */
@@ -1001,34 +1148,56 @@ const ALL_REVISIONS = SAMPLE.flatMap(row => {
     return revisions;
 });
 
-let currentFilter = { flt:'', reg:'', dep:'', arr:'', dsp:'' };
+// Live data allows mutation (release action)
+let liveData = SAMPLE.map(r => [...r]);
+let liveAllRevs = () => liveData.flatMap(row => {
+    const revisions = [];
+    if (row[11]) {
+        const prev = [...row];
+        prev[10] = 'R01';
+        prev[14] = Math.round(row[14] * 0.97);
+        revisions.push(prev);
+    }
+    revisions.push(row);
+    return revisions;
+});
+
+let currentFilter = { flt:'', reg:'', dep:'', arr:'', dsp:'', etd:'', eta:'', type:'', status:'' };
 
 function currentData() {
-    const base = revMode === 'last' ? SAMPLE : ALL_REVISIONS;
+    const base = revMode === 'last' ? liveData : liveAllRevs();
     return base.filter(r => {
-        if (currentFilter.flt && !r[1].includes(currentFilter.flt.toUpperCase())) return false;
-        if (currentFilter.reg && !r[0].includes(currentFilter.reg.toUpperCase())) return false;
-        if (currentFilter.dep && r[2] !== currentFilter.dep) return false;
-        if (currentFilter.arr && r[3] !== currentFilter.arr) return false;
-        if (currentFilter.dsp && r[27] !== currentFilter.dsp) return false;
+        if (currentFilter.flt    && !r[1].toUpperCase().includes(currentFilter.flt.toUpperCase()))    return false;
+        if (currentFilter.reg    && !r[0].toUpperCase().includes(currentFilter.reg.toUpperCase()))    return false;
+        if (currentFilter.dep    && r[2] !== currentFilter.dep)   return false;
+        if (currentFilter.arr    && r[3] !== currentFilter.arr)   return false;
+        if (currentFilter.type   && r[8] !== currentFilter.type)  return false;
+        if (currentFilter.status && r[9] !== currentFilter.status) return false;
+        if (currentFilter.etd    && !(r[6]||'').includes(currentFilter.etd))   return false;
+        if (currentFilter.eta    && !(r[7]||'').includes(currentFilter.eta))   return false;
+        if (currentFilter.dsp    && !r[27].toLowerCase().includes(currentFilter.dsp.toLowerCase())) return false;
         return true;
     });
 }
 
 function applyFilter() {
     currentFilter = {
-        flt: document.getElementById('fFltNo').value.trim(),
-        reg: document.getElementById('fReg').value.trim(),
-        dep: document.getElementById('fDep').value,
-        arr: document.getElementById('fArr').value,
-        dsp: document.getElementById('fDsp').value,
+        flt:    document.getElementById('fFltNo').value.trim(),
+        reg:    document.getElementById('fReg').value.trim(),
+        dep:    document.getElementById('fDep').value,
+        arr:    document.getElementById('fArr').value,
+        etd:    document.getElementById('fEtd').value.trim(),
+        eta:    document.getElementById('fEta').value.trim(),
+        type:   document.getElementById('fType').value,
+        status: document.getElementById('fStatus').value,
+        dsp:    document.getElementById('fDsp').value.trim(),
     };
     renderTable(currentData());
 }
 function clearFilter() {
-    ['fFltNo','fReg'].forEach(id => document.getElementById(id).value = '');
-    ['fDep','fArr','fDsp'].forEach(id => document.getElementById(id).value = '');
-    currentFilter = { flt:'', reg:'', dep:'', arr:'', dsp:'' };
+    ['fFltNo','fReg','fEtd','fEta','fDsp'].forEach(id => document.getElementById(id).value = '');
+    ['fDep','fArr','fType','fStatus'].forEach(id => document.getElementById(id).value = '');
+    currentFilter = { flt:'', reg:'', dep:'', arr:'', dsp:'', etd:'', eta:'', type:'', status:'' };
     renderTable(currentData());
 }
 
@@ -1063,42 +1232,52 @@ function renderTable(data) {
     const tbody = document.getElementById('tbody');
     tbody.innerHTML = '';
     data.forEach((r, i) => {
-        const [reg,flt,dep,arr,,date,etd,eta,type,status,ofpRev,dspRel,pilRel,pilRev,
+        const [reg,flt,dep,arr,,date,etd,eta,type,status,ofpRev,dspRel,pilRel,pic,
                blkFuel,fuelOrd,tripFuel,tripTime,cont,destAltn,altnFuel,
                taxiTime,taxiFuel,possExtra,dow,pld,tow,disp] = r;
         const isCurrent = ofpRev === 'R02';
-        const pilRevCur = pilRev === 'R02';
+        const isPln = status === 'PLN';
         const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td class="sc1 td-l" style="padding-left:14px;"><span class="cell-reg">${reg}</span></td>
-            <td class="sc2 td-l"><span class="cell-flt">${flt}</span></td>
-            <td class="cell-dim">${dep}</td>
-            <td class="cell-dim">${arr}</td>
-            <td class="cell-dim" style="font-size:10px;">${date}</td>
-            <td class="cell-mono">${etd}</td>
-            <td class="cell-mono">${eta}</td>
-            <td>${typeChip(type)}</td>
-            <td>${statusPill(status)}</td>
-            <td>${revBadge(ofpRev, isCurrent)}</td>
-            <td class="cell-dsp">${disp}</td>
-            <td>${timeCell(dspRel)}</td>
-            <td>${timeCell(pilRel)}</td>
-            <td>${revBadge(pilRev, pilRevCur)}</td>
-            <td class="cell-num">${blkFuel != null ? fmt(blkFuel) : '<span class="cell-dash">---</span>'}</td>
-            <td class="cell-num">${fuelOrd != null ? fmt(fuelOrd) : '<span class="cell-dash">---</span>'}</td>
-            <td class="cell-num">${tripFuel != null ? fmt(tripFuel) : '<span class="cell-dash">---</span>'}</td>
-            <td class="cell-mono">${tripTime || '<span class="cell-dash">---</span>'}</td>
-            <td class="cell-dim">${cont || '<span class="cell-dash">---</span>'}</td>
-            <td class="cell-dim">${destAltn || '<span class="cell-dash">---</span>'}</td>
-            <td class="cell-num">${altnFuel != null ? fmt(altnFuel) : '<span class="cell-dash">---</span>'}</td>
-            <td class="cell-mono">${taxiTime || '<span class="cell-dash">---</span>'}</td>
-            <td class="cell-num">${taxiFuel != null ? fmt(taxiFuel) : '<span class="cell-dash">---</span>'}</td>
-            <td>${possExtra != null ? extraCell(possExtra) : '<span class="cell-dash">---</span>'}</td>
-            <td class="cell-num">${dow != null ? fmt(dow) : '<span class="cell-dash">---</span>'}</td>
-            <td class="cell-num">${pld != null ? fmt(pld) : '<span class="cell-dash">---</span>'}</td>
-            <td class="cell-num">${tow != null ? fmt(tow) : '<span class="cell-dash">---</span>'}</td>
-            <td style="padding-right:16px;"><button class="btn-view" onclick="openBrief(${i}, event)">View Briefing Sheet</button></td>
+        // Build action cell
+        const actionHtml = `
+            <button class="btn-view" onclick="openBrief(${i}, event)">View Briefing</button>
+            ${isPln ? `<button class="btn-release" onclick="releaseOFP(${i}, event)" title="Dispatcher Release OFP">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg>
+                Release
+            </button>` : ''}
         `;
+        tr.innerHTML = `
+            <td class="sc1 td-l" data-col="acReg" style="padding-left:14px;"><span class="cell-reg">${reg}</span></td>
+            <td class="sc2 td-l" data-col="fltNo"><span class="cell-flt">${flt}</span></td>
+            <td class="cell-dim" data-col="dep">${dep}</td>
+            <td class="cell-dim" data-col="arr">${arr}</td>
+            <td class="cell-dim" data-col="date" style="font-size:10px;">${date}</td>
+            <td class="cell-mono" data-col="etd">${etd}</td>
+            <td class="cell-mono" data-col="eta">${eta}</td>
+            <td data-col="type">${typeChip(type)}</td>
+            <td data-col="status">${statusPill(status)}</td>
+            <td data-col="ofpRev">${revBadge(ofpRev, isCurrent)}</td>
+            <td class="cell-dsp" data-col="dispatcher">${disp}</td>
+            <td data-col="dspRel">${timeCell(dspRel)}</td>
+            <td class="cell-dsp" data-col="pic" style="font-size:10px;">${pic || '<span class="cell-dash">---</span>'}</td>
+            <td data-col="pilRel">${timeCell(pilRel)}</td>
+            <td class="cell-num" data-col="blkFuel">${blkFuel != null ? fmt(blkFuel) : '<span class="cell-dash">---</span>'}</td>
+            <td class="cell-num" data-col="fuelOrd">${fuelOrd != null ? fmt(fuelOrd) : '<span class="cell-dash">---</span>'}</td>
+            <td class="cell-num" data-col="tripFuel">${tripFuel != null ? fmt(tripFuel) : '<span class="cell-dash">---</span>'}</td>
+            <td class="cell-mono" data-col="tripTime">${tripTime || '<span class="cell-dash">---</span>'}</td>
+            <td class="cell-dim" data-col="cont">${cont || '<span class="cell-dash">---</span>'}</td>
+            <td class="cell-dim" data-col="destAltn">${destAltn || '<span class="cell-dash">---</span>'}</td>
+            <td class="cell-num" data-col="altnFuel">${altnFuel != null ? fmt(altnFuel) : '<span class="cell-dash">---</span>'}</td>
+            <td class="cell-mono" data-col="taxiTime">${taxiTime || '<span class="cell-dash">---</span>'}</td>
+            <td class="cell-num" data-col="taxiFuel">${taxiFuel != null ? fmt(taxiFuel) : '<span class="cell-dash">---</span>'}</td>
+            <td data-col="possExtra">${possExtra != null ? extraCell(possExtra) : '<span class="cell-dash">---</span>'}</td>
+            <td class="cell-num" data-col="dow">${dow != null ? fmt(dow) : '<span class="cell-dash">---</span>'}</td>
+            <td class="cell-num" data-col="pld">${pld != null ? fmt(pld) : '<span class="cell-dash">---</span>'}</td>
+            <td class="cell-num" data-col="tow">${tow != null ? fmt(tow) : '<span class="cell-dash">---</span>'}</td>
+            <td data-col="action" style="padding-right:16px; white-space:nowrap;">${actionHtml}</td>
+        `;
+        // Apply hidden columns
+        applyColumnVisibility(tr);
         tbody.appendChild(tr);
     });
     document.getElementById('cntShow').textContent  = data.length;
@@ -1109,13 +1288,166 @@ function renderTable(data) {
 }
 
 /* =========================================================
+   TOAST
+   ========================================================= */
+function showToast(msg, type = 'success', durationMs = 3500) {
+    const wrap = document.getElementById('toastWrap');
+    const icons = { success: '✅', warn: '⚠️', error: '❌', info: 'ℹ️' };
+    const t = document.createElement('div');
+    t.className = `toast${type === 'warn' ? ' toast-warn' : type === 'error' ? ' toast-error' : ''}`;
+    t.innerHTML = `<span class="toast-icon">${icons[type]||'✅'}</span><span class="toast-msg">${msg}</span><button class="toast-close" onclick="this.closest('.toast').remove()">✕</button>`;
+    wrap.appendChild(t);
+    setTimeout(() => t.remove(), durationMs);
+}
+
+/* =========================================================
+   EXPORT EXCEL
+   ========================================================= */
+function exportExcel() {
+    const data = currentData();
+    showToast(`Đã xuất ${data.length} bản ghi ra file Excel (FlightPlans_${new Date().toISOString().slice(0,10)}.xlsx)`);
+}
+
+/* =========================================================
+   RELEASE OFP
+   ========================================================= */
+function releaseOFP(idx, e) {
+    e && e.stopPropagation();
+    const r = window._currentRows[idx];
+    if (!r || r[9] !== 'PLN') return;
+    const flt = r[1];
+    if (!confirm(`Bạn xác nhận Release OFP cho chuyến bay ${flt}?\nHành động này sẽ chuyển trạng thái sang REL và thông báo cho phi công.`)) return;
+    // Find original row in liveData and update
+    const origIdx = liveData.findIndex(d => d[0]===r[0] && d[1]===r[1] && d[6]===r[6]);
+    if (origIdx === -1) return;
+    const now = new Date();
+    const pad = v => String(v).padStart(2,'0');
+    const utcTime = pad(now.getUTCHours())+':'+pad(now.getUTCMinutes());
+    liveData[origIdx][9]  = 'REL';       // status
+    liveData[origIdx][10] = 'R01';       // ofpRev
+    liveData[origIdx][11] = utcTime;     // dspRel
+    renderTable(currentData());
+    showToast(`OFP chuyến bay ${flt} đã được Release thành công (${utcTime}Z)`);
+}
+
+/* =========================================================
+   TABLE SETTING — COLUMN VISIBILITY
+   ========================================================= */
+const COL_DEFS = [
+    { key:'acReg',      label:'AC REG',      locked: true  },
+    { key:'fltNo',      label:'FLT NO',      locked: true  },
+    { key:'dep',        label:'DEP',         locked: false },
+    { key:'arr',        label:'ARR',         locked: false },
+    { key:'date',       label:'DATE',        locked: false },
+    { key:'etd',        label:'ETD (Z)',     locked: false },
+    { key:'eta',        label:'ETA (Z)',     locked: false },
+    { key:'type',       label:'TYPE',        locked: false },
+    { key:'status',     label:'STATUS',      locked: false },
+    { key:'ofpRev',     label:'OFP REV',     locked: false },
+    { key:'dispatcher', label:'DISPATCHER',  locked: false },
+    { key:'dspRel',     label:'DSP REL',     locked: false },
+    { key:'pic',        label:'PIC',         locked: false },
+    { key:'pilRel',     label:'PIL REL',     locked: false },
+    { key:'blkFuel',    label:'BLOCK FUEL',  locked: false },
+    { key:'fuelOrd',    label:'FUEL ORDER',  locked: false },
+    { key:'tripFuel',   label:'TRIP FUEL',   locked: false },
+    { key:'tripTime',   label:'TRIP TIME',   locked: false },
+    { key:'cont',       label:'CONT %',      locked: false },
+    { key:'destAltn',   label:'DEST ALTN',   locked: false },
+    { key:'altnFuel',   label:'ALTN FUEL',   locked: false },
+    { key:'taxiTime',   label:'TAXI TIME',   locked: false },
+    { key:'taxiFuel',   label:'TAXI FUEL',   locked: false },
+    { key:'possExtra',  label:'POSS EXTRA',  locked: false },
+    { key:'dow',        label:'DOW',         locked: false },
+    { key:'pld',        label:'PLD',         locked: false },
+    { key:'tow',        label:'TOW',         locked: false },
+    { key:'action',     label:'ACTION',      locked: true  },
+];
+
+let hiddenCols = new Set();
+let pendingHidden = new Set();
+
+function buildColCheckboxes() {
+    const cont = document.getElementById('tblColChecks');
+    cont.innerHTML = '';
+    COL_DEFS.forEach(c => {
+        const item = document.createElement('div');
+        item.className = 'tbl-setting-item';
+        const checked = !hiddenCols.has(c.key);
+        item.innerHTML = `
+            <input type="checkbox" id="cc_${c.key}" value="${c.key}" ${checked ? 'checked' : ''} ${c.locked ? 'disabled' : ''}>
+            <label for="cc_${c.key}" style="${c.locked ? 'opacity:.5' : ''}">${c.label}${c.locked ? ' 🔒' : ''}</label>
+        `;
+        cont.appendChild(item);
+    });
+}
+
+function toggleTableSetting() {
+    const panel = document.getElementById('tblSettingPanel');
+    const btn   = document.getElementById('btnTblSetting');
+    const isOpen = panel.classList.toggle('open');
+    btn.classList.toggle('active', isOpen);
+    if (isOpen) buildColCheckboxes();
+    // Close on outside click
+    if (isOpen) {
+        setTimeout(() => {
+            document.addEventListener('click', closePanelOutside, { once: true });
+        }, 10);
+    }
+}
+function closePanelOutside(e) {
+    const panel = document.getElementById('tblSettingPanel');
+    const btn   = document.getElementById('btnTblSetting');
+    if (!panel.contains(e.target) && !btn.contains(e.target)) {
+        panel.classList.remove('open');
+        btn.classList.remove('active');
+    }
+}
+
+function applyColumns() {
+    hiddenCols = new Set();
+    document.querySelectorAll('#tblColChecks input[type=checkbox]').forEach(cb => {
+        if (!cb.checked && !cb.disabled) hiddenCols.add(cb.value);
+    });
+    applyColumnVisibilityAll();
+    document.getElementById('tblSettingPanel').classList.remove('open');
+    document.getElementById('btnTblSetting').classList.remove('active');
+}
+
+function resetColumns() {
+    hiddenCols = new Set();
+    document.querySelectorAll('#tblColChecks input[type=checkbox]').forEach(cb => {
+        if (!cb.disabled) cb.checked = true;
+    });
+    applyColumnVisibilityAll();
+}
+
+function applyColumnVisibility(tr) {
+    if (hiddenCols.size === 0) return;
+    tr.querySelectorAll('td[data-col]').forEach(td => {
+        td.style.display = hiddenCols.has(td.dataset.col) ? 'none' : '';
+    });
+}
+
+function applyColumnVisibilityAll() {
+    // headers
+    document.querySelectorAll('th[data-col]').forEach(th => {
+        th.style.display = hiddenCols.has(th.dataset.col) ? 'none' : '';
+    });
+    // body cells
+    document.querySelectorAll('tbody td[data-col]').forEach(td => {
+        td.style.display = hiddenCols.has(td.dataset.col) ? 'none' : '';
+    });
+}
+
+/* =========================================================
    MODAL
    ========================================================= */
 function openBrief(idx, e) {
     e && e.stopPropagation();
     const r = window._currentRows[idx];
     if (!r) return;
-    const [reg,flt,dep,arr,acType,date,etd,eta,type,status,ofpRev,dspRel,pilRel,pilRev,
+    const [reg,flt,dep,arr,acType,date,etd,eta,type,status,ofpRev,dspRel,pilRel,pic,
            blkFuel,fuelOrd,tripFuel,tripTime,cont,destAltn,altnFuel,
            taxiTime,taxiFuel,possExtra,dow,pld,tow,disp] = r;
 
@@ -1134,13 +1466,13 @@ function openBrief(idx, e) {
             <div class="m-item"><div class="m-label">Route</div><div class="m-val">${dep} -> ${arr}</div></div>
             <div class="m-item"><div class="m-label">ETD / ETA (UTC)</div><div class="m-val">${etd}Z / ${eta}Z</div></div>
             <div class="m-item"><div class="m-label">Aircraft Type</div><div class="m-val">${acType}</div></div>
-            <div class="m-item"><div class="m-label">Status</div><div class="m-val ${statusColor[status]||''}">${status || '---'}</div></div>
+            <div class="m-item"><div class="m-label">Status</div><div class="m-val ${statusColor[status]||""}">${status || '---'}</div></div>
         </div>
         <div class="m-divider"></div>
         <p class="m-section-title">Release</p>
         <div class="m-grid">
             <div class="m-item"><div class="m-label">OFP Revision</div><div class="m-val cyan">${ofpRev || '---'}</div></div>
-            <div class="m-item"><div class="m-label">Pilot Rev.</div><div class="m-val">${pilRev || '---'}</div></div>
+            <div class="m-item"><div class="m-label">Pilot in Command (PIC)</div><div class="m-val">${pic || '---'}</div></div>
             <div class="m-item"><div class="m-label">DSP Release Time</div><div class="m-val">${dspRel ? dspRel+'Z' : '---'}</div></div>
             <div class="m-item"><div class="m-label">Pilot Release Time</div><div class="m-val">${pilRel ? pilRel+'Z' : '---'}</div></div>
             <div class="m-item" style="grid-column:span 2;"><div class="m-label">Dispatcher</div><div class="m-val">${disp}</div></div>
