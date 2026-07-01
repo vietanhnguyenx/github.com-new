@@ -419,497 +419,330 @@
         .live-dot { animation: blink 2.2s ease infinite; }
         .sb-right { margin-left: auto; }
 
-        /* ========= RIGHT PANE WRAPPER & SPLIT LAYOUT ========= */
-        .right-pane {
+        /* ========= DETAIL PANEL (right side) ========= */
+        .detail-pane {
             flex: 0 0 0;
             min-width: 0;
             overflow: hidden;
-            position: relative;
             background: var(--bg-surface);
-            display: flex;
-            flex-direction: column;
+            border-left: 1px solid var(--border);
+            display: flex; flex-direction: column;
             transition: flex .25s ease, min-width .25s ease;
         }
-        .content.split .right-pane {
+        .content.split .detail-pane {
             flex: 0 0 45%;
             min-width: 480px;
-            border-left: 1px solid var(--border);
         }
-        @media (max-width: 1200px) {
-            .content.split .right-pane { flex: 0 0 52%; min-width: 400px; }
-        }
+        @media (max-width: 1200px) { .content.split .detail-pane { flex: 0 0 52%; min-width: 400px; } }
+        .detail-pane.empty .detail-inner { display: none; }
+        .detail-inner { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
 
-        /* Ẩn các pane bên trong khi wrapper ở trạng thái empty */
-        .right-pane.empty .detail-pane,
-        .right-pane.empty .upload-panel {
-            display: none !important;
-        }
-        .right-pane:not(.empty) #emptyState {
-            display: none !important;
-        }
-
-        /* Giao diện chung cho Detail Pane và Upload Panel bên trong wrapper */
-        .detail-pane, .upload-panel {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--bg-surface);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .detail-pane {
-            z-index: 1;
-        }
-
-        .upload-panel {
-            z-index: 2;
-            transform: translateX(100%);
-            transition: transform .28s cubic-bezier(.25,.46,.45,.94);
-        }
-        .upload-panel.open {
-            transform: translateX(0);
-        }
-
-        /* ========= THIẾT KẾ PANEL HEADERS (Glassmorphism) ========= */
-        .dp-head, .um-head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 14px 20px;
-            border-bottom: 1px solid var(--border-light);
-            background: linear-gradient(180deg, rgba(26, 32, 53, 0.75) 0%, rgba(18, 23, 40, 0.9) 100%);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+        .dp-head {
+            display: flex; align-items: flex-start; justify-content: space-between;
+            padding: 14px 18px 12px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-surface) 100%);
             flex-shrink: 0;
         }
-        .dp-head-l, .um-title-wrap {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            min-width: 0;
+        .dp-head-l { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        .dp-flt {
+            display: flex; align-items: center; gap: 10px;
+            font-size: 17px; font-weight: 800; color: var(--cyan); letter-spacing: .05em;
         }
-        .dp-flt, .um-title {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 18px;
-            font-weight: 800;
-            color: var(--cyan);
-            letter-spacing: .05em;
-            text-shadow: 0 0 10px rgba(6, 212, 255, 0.2);
-        }
-        .dp-reg, .um-subtitle {
-            font-size: 11px;
-            color: var(--text-secondary);
-            font-weight: 600;
-            letter-spacing: .05em;
-        }
+        .dp-reg { font-size: 11px; color: var(--text-secondary); font-weight: 600; letter-spacing: .05em; }
         .dp-route {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--text-primary);
+            display: flex; align-items: center; gap: 8px;
+            font-size: 13px; font-weight: 700; color: var(--text-primary);
             margin-top: 4px;
         }
         .dp-route svg { color: var(--cyan); }
-        
-        .dp-close, .um-close {
-            width: 28px;
-            height: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(30, 41, 73, 0.4);
-            border: 1px solid var(--border-light);
-            color: var(--text-secondary);
-            cursor: pointer;
-            border-radius: var(--r-md);
-            transition: all .15s ease;
+        .dp-close {
+            width: 28px; height: 28px;
+            display: flex; align-items: center; justify-content: center;
+            background: none; border: 1px solid var(--border-light);
+            color: var(--text-muted); cursor: pointer;
+            border-radius: var(--r-md); transition: all .14s;
             flex-shrink: 0;
         }
-        .dp-close:hover, .um-close:hover {
-            color: var(--text-primary);
-            border-color: var(--cyan-border);
-            background: rgba(6, 212, 255, 0.1);
-            box-shadow: 0 0 8px rgba(6, 212, 255, 0.15);
-        }
+        .dp-close:hover { color: var(--text-primary); border-color: var(--cyan-border); background: var(--bg-elevated); }
 
-        /* ========= THẺ THÔNG TIN CHUYẾN BAY (Meta Widgets) ========= */
-        .dp-meta, .um-flight-info {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 6px;
-            padding: 10px 18px;
-            background: rgba(14, 18, 32, 0.35);
-            border-bottom: 1px solid var(--border-light);
+        .dp-meta {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 1px;
+            background: var(--border);
+            border-bottom: 1px solid var(--border);
             flex-shrink: 0;
         }
-        .dp-meta-item, .um-fi-item {
-            background: rgba(30, 41, 73, 0.25);
-            border: 1px solid rgba(6, 212, 255, 0.05);
-            border-radius: var(--r-md);
-            padding: 8px 10px;
-            transition: all 0.2s ease;
-        }
-        .dp-meta-item:hover, .um-fi-item:hover {
-            border-color: rgba(6, 212, 255, 0.18);
-            background: rgba(30, 41, 73, 0.4);
-        }
-        .dp-meta-lbl, .um-fi-lbl {
-            font-size: 8px;
-            font-weight: 700;
-            color: var(--text-muted);
-            letter-spacing: .08em;
-            text-transform: uppercase;
-            margin-bottom: 3px;
-        }
-        .dp-meta-val, .um-fi-val {
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--text-primary);
-            font-family: 'Consolas', monospace;
-        }
-        .um-fi-val.cyan {
-            color: var(--cyan);
-            text-shadow: 0 0 6px rgba(6, 212, 255, 0.15);
-        }
+        .dp-meta-item { background: var(--bg-surface); padding: 8px 12px; }
+        .dp-meta-lbl  { font-size: 9px; font-weight: 700; color: var(--text-muted); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 2px; }
+        .dp-meta-val  { font-size: 12px; font-weight: 700; color: var(--text-primary); font-family: 'Consolas', monospace; }
 
         /* ========= TAB BAR (Detail Pane) ========= */
         .dp-tab-bar {
-            display: flex;
-            align-items: stretch;
-            border-bottom: 1px solid var(--border-light);
-            background: rgba(14, 18, 32, 0.45);
+            display: flex; align-items: stretch;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-elevated);
             flex-shrink: 0;
-            padding: 0 16px;
+            padding: 0 18px;
         }
         .dp-tab {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 11px 16px 10px;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: .04em;
+            display: flex; align-items: center; gap: 6px;
+            padding: 10px 16px 9px;
+            font-size: 11px; font-weight: 600; letter-spacing: .04em;
             color: var(--text-secondary);
-            border: none;
-            background: none;
-            cursor: pointer;
+            border: none; background: none; cursor: pointer;
             border-bottom: 2px solid transparent;
-            transition: all .2s ease;
+            transition: all .15s;
             white-space: nowrap;
         }
-        .dp-tab:hover {
-            color: var(--text-primary);
-            background: rgba(255, 255, 255, 0.02);
-        }
+        .dp-tab:hover { color: var(--text-primary); }
         .dp-tab.active {
             color: var(--cyan);
             border-bottom-color: var(--cyan);
-            background: rgba(6, 212, 255, 0.03);
-            text-shadow: 0 0 6px rgba(6, 212, 255, 0.15);
         }
         .dp-tab-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 17px;
-            height: 17px;
-            border-radius: 50%;
-            font-size: 8.5px;
-            font-weight: 800;
-            margin-left: 4px;
-            transition: all 0.2s ease;
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 16px; height: 16px; border-radius: 50%;
+            font-size: 8px; font-weight: 700;
         }
-        .badge-ok  { background: var(--green-dim); color: var(--green); box-shadow: 0 0 6px rgba(29, 214, 140, 0.25); }
-        .badge-pen { background: var(--orange-dim); color: var(--orange); box-shadow: 0 0 6px rgba(245, 158, 11, 0.25); }
+        .badge-ok  { background: var(--green-dim); color: var(--green); }
+        .badge-pen { background: var(--orange-dim); color: var(--orange); }
         .badge-na  { background: #252C42; color: var(--text-muted); }
 
-        /* ========= BODY CHUNG (Scrollable) ========= */
-        .dp-body, .um-body {
-            flex: 1;
-            min-height: 0;
+        /* ========= DOC TABLE (trong Detail Pane) ========= */
+        .dp-body {
+            flex: 1; min-height: 0;
             overflow-y: auto;
-            padding: 16px 20px 20px;
-        }
-        .um-section-title {
-            font-size: 10px;
-            font-weight: 700;
-            color: var(--text-muted);
-            letter-spacing: .1em;
-            text-transform: uppercase;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .um-section-title::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: var(--border-light);
+            padding: 14px 18px 20px;
         }
 
-        /* ========= THÈ DOCUMENT TYPE BADGE (Badge cho Loại Tài Liệu) ========= */
-        .doc-type-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            font-weight: 800;
-            padding: 2.5px 8px;
-            border-radius: var(--r-sm);
-            letter-spacing: .04em;
-            text-transform: uppercase;
-            font-family: 'Consolas', monospace;
-        }
-        .doc-type-badge.ls { background: var(--cyan-dim); color: var(--cyan); border: 1px solid var(--cyan-border); }
-        .doc-type-badge.gd { background: var(--purple-dim); color: var(--purple); border: 1px solid rgba(167, 139, 250, 0.28); }
-        .doc-type-badge.pm { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(59, 158, 255, 0.25); }
-
-        /* ========= BẢNG TÀI LIỆU (Table inside panels) ========= */
-        .doc-table-wrap, .um-table-wrap {
+        .doc-table-wrap {
             border: 1px solid var(--border-light);
             border-radius: var(--r-lg);
-            overflow: auto;
-            background: rgba(14, 18, 32, 0.2);
-            box-shadow: inset 0 2px 10px rgba(0,0,0,0.15);
+            overflow: hidden;
+            margin-top: 2px;
         }
-        .doc-table, .um-table {
+        .doc-table {
             width: 100%;
             border-collapse: collapse;
             white-space: nowrap;
         }
-        .doc-table thead th, .um-table thead th {
-            background: rgba(22, 28, 45, 0.7);
-            color: var(--text-secondary);
-            font-size: 9.5px;
-            font-weight: 700;
-            letter-spacing: .08em;
-            text-transform: uppercase;
-            padding: 10px 14px;
-            text-align: left;
-            border-bottom: 1px solid var(--border-light);
-            user-select: none;
+        .doc-table thead th {
+            background: var(--bg-elevated);
+            color: var(--text-muted);
+            font-size: 9px; font-weight: 700;
+            letter-spacing: .08em; text-transform: uppercase;
+            padding: 8px 12px; text-align: left;
+            border-bottom: 1px solid var(--border);
         }
-        .doc-table thead th:last-child, .um-table thead th:last-child {
-            text-align: center;
-        }
-        .doc-table tbody td, .um-table tbody td {
-            padding: 11px 14px;
+        .doc-table thead th:last-child { text-align: center; }
+        .doc-table tbody td {
+            padding: 10px 12px;
             font-size: 11px;
             border-bottom: 1px solid var(--border);
-            background: transparent;
+            background: var(--bg-surface);
+            text-align: left;
             vertical-align: middle;
-            transition: background-color 0.12s ease;
         }
-        .doc-table tbody tr:last-child td, .um-table tbody tr:last-child td {
-            border-bottom: none;
-        }
-        .doc-table tbody tr:hover td, .um-table tbody tr:hover td {
-            background: rgba(6, 212, 255, 0.03);
-        }
+        .doc-table tbody tr:last-child td { border-bottom: none; }
+        .doc-table tbody tr:hover td { background: var(--bg-hover); }
+        .doc-table tbody td:last-child { text-align: center; }
 
         .dt-name {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
+            display: flex; flex-direction: column; gap: 2px;
         }
-        .dt-name-main {
-            font-weight: 700;
-            color: var(--text-primary);
-            font-size: 11.5px;
-        }
-        .dt-name-sub {
-            font-size: 9.5px;
-            color: var(--text-muted);
-            font-family: 'Consolas', monospace;
-        }
-        .dt-empty {
-            color: var(--text-muted);
-            font-style: italic;
-        }
+        .dt-name-main { font-weight: 600; color: var(--text-primary); font-size: 11px; }
+        .dt-name-sub { font-size: 9.5px; color: var(--text-muted); font-family: 'Consolas', monospace; }
+        .dt-empty { color: var(--text-muted); font-style: italic; }
 
-        .dt-rev {
-            font-family: 'Consolas', monospace;
-            font-weight: 700;
-            color: var(--cyan);
-            font-size: 11.5px;
-        }
+        .dt-rev { font-family: 'Consolas', monospace; font-weight: 700; color: var(--cyan); font-size: 11px; }
         .dt-rev.empty { color: var(--text-muted); }
-        .dt-date {
-            font-family: 'Consolas', monospace;
-            font-size: 10.5px;
-            color: var(--text-secondary);
-        }
+        .dt-date { font-family: 'Consolas', monospace; font-size: 10.5px; color: var(--text-secondary); }
 
         .dt-status {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 9px;
-            font-weight: 800;
-            padding: 2.5px 8px;
-            border-radius: var(--r-full);
-            letter-spacing: .04em;
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 9px; font-weight: 700; padding: 2px 8px;
+            border-radius: var(--r-full); letter-spacing: .04em;
         }
-        .dt-status.ok      { background: var(--green-dim); color: var(--green); box-shadow: 0 0 6px rgba(29, 214, 140, 0.2); }
-        .dt-status.pending { background: var(--orange-dim); color: var(--orange); box-shadow: 0 0 6px rgba(245, 158, 11, 0.2); }
-        .dt-status.missing { background: rgba(74, 83, 112, 0.15); color: var(--text-muted); }
-        .dt-dot {
-            width: 5px;
-            height: 5px;
-            border-radius: 50%;
-            background: currentColor;
-            box-shadow: 0 0 4px currentColor;
-        }
+        .dt-status.ok     { background: var(--green-dim); color: var(--green); }
+        .dt-status.pending{ background: var(--orange-dim); color: var(--orange); }
+        .dt-status.missing{ background: #252C42; color: var(--text-muted); }
+        .dt-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
 
-        /* ACTIONS & BUTTONS */
-        .dt-action-wrap, .um-action-cell {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-        }
-        .um-action-cell {
-            justify-content: flex-end;
-        }
-        
-        .dt-btn, .um-choose-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            height: 26px;
-            padding: 0 10px;
+        .dt-action-wrap { display: flex; align-items: center; justify-content: center; gap: 4px; }
+        .dt-btn {
+            display: inline-flex; align-items: center; gap: 4px;
+            height: 26px; padding: 0 9px;
             border: 1px solid var(--border-light);
             border-radius: var(--r-md);
-            background: rgba(30, 41, 73, 0.3);
+            background: var(--bg-elevated);
             color: var(--text-secondary);
-            font-size: 10px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all .15s ease;
+            font-size: 10px; font-weight: 600;
+            cursor: pointer; transition: all .14s;
             white-space: nowrap;
         }
-        .dt-btn:hover, .um-choose-btn:hover {
-            color: var(--text-primary);
-            border-color: var(--cyan-border);
-            background: rgba(6, 212, 255, 0.08);
-        }
-        .dt-btn:disabled {
-            opacity: .3;
-            cursor: not-allowed;
-            background: none !important;
-            border-color: var(--border-light) !important;
-            color: var(--text-muted) !important;
-        }
+        .dt-btn:hover { color: var(--text-primary); border-color: var(--cyan-border); }
+        .dt-btn:disabled { opacity: .35; cursor: not-allowed; }
 
+        /* Empty state */
+        .empty-state {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            color: var(--text-muted); gap: 8px;
+            pointer-events: none;
+        }
+        .empty-state svg { color: var(--border-light); }
+        .empty-state p { font-size: 12px; }
+
+        /* ========= UPLOAD PANEL (slide-in over detail pane) ========= */
+        .upload-panel {
+            position: absolute; inset: 0; z-index: 10;
+            background: var(--bg-surface);
+            display: flex; flex-direction: column;
+            transform: translateX(100%);
+            transition: transform .3s cubic-bezier(.25,.46,.45,.94);
+        }
+        .upload-panel.open { transform: translateX(0); }
+
+        /* Upload panel — header */
+        .um-head {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 20px; border-bottom: 1px solid var(--border);
+            background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-surface) 100%);
+            flex-shrink: 0;
+        }
+        .um-title-wrap { display: flex; flex-direction: column; gap: 2px; }
+        .um-title { font-size: 15px; font-weight: 700; color: var(--cyan); }
+        .um-subtitle { font-size: 10px; color: var(--text-muted); letter-spacing: .06em; text-transform: uppercase; }
+        .um-close {
+            width: 28px; height: 28px;
+            display: flex; align-items: center; justify-content: center;
+            background: none; border: 1px solid var(--border-light); color: var(--text-muted);
+            cursor: pointer; border-radius: var(--r-md); transition: all .14s;
+        }
+        .um-close:hover { background: var(--bg-elevated); color: var(--text-primary); border-color: var(--cyan-border); }
+
+        /* Flight info bar */
+        .um-flight-info {
+            display: flex; align-items: center; flex-wrap: wrap; gap: 6px 20px;
+            padding: 12px 20px;
+            background: var(--bg-elevated);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .um-fi-item { display: flex; flex-direction: column; gap: 1px; }
+        .um-fi-lbl { font-size: 8.5px; font-weight: 700; color: var(--text-muted); letter-spacing: .1em; text-transform: uppercase; }
+        .um-fi-val { font-size: 12px; font-weight: 700; color: var(--text-primary); font-family: 'Consolas', monospace; }
+        .um-fi-val.cyan { color: var(--cyan); }
+        .um-fi-sep { width: 1px; height: 28px; background: var(--border-light); align-self: center; }
+
+        /* Scrollable body */
+        .um-body { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 20px 20px; }
+        .um-section-title {
+            font-size: 10px; font-weight: 700; color: var(--text-muted);
+            letter-spacing: .1em; text-transform: uppercase;
+            margin-bottom: 10px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .um-section-title::after { content:''; flex:1; height:1px; background: var(--border); }
+
+        .um-table-wrap {
+            border: 1px solid var(--border-light);
+            border-radius: var(--r-lg);
+            overflow: auto;
+        }
+        .um-table {
+            width: 100%;
+            border-collapse: collapse;
+            white-space: nowrap;
+        }
+        .um-table thead th {
+            background: var(--bg-elevated);
+            color: var(--text-muted);
+            font-size: 9px; font-weight: 700;
+            letter-spacing: .08em; text-transform: uppercase;
+            padding: 8px 12px; text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        .um-table thead th:last-child { text-align: center; }
+        .um-table tbody td {
+            padding: 10px 12px;
+            font-size: 11px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-surface);
+            vertical-align: middle;
+        }
+        .um-table tbody tr:last-child td { border-bottom: none; }
+        .um-table tbody tr:hover td { background: var(--bg-hover); }
+        .um-table tbody td:last-child { text-align: right; }
+
+        .um-doc-type { display: flex; align-items: center; gap: 8px; }
+        .um-doc-icon {
+            width: 26px; height: 26px; border-radius: var(--r-sm);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .um-doc-icon.cyan   { background: var(--cyan-dim); color: var(--cyan); }
+        .um-doc-icon.purple { background: var(--purple-dim); color: var(--purple); }
+        .um-doc-icon.blue   { background: var(--blue-dim); color: var(--blue); }
+
+        .um-doc-label { display: flex; flex-direction: column; gap: 1px; }
+        .um-doc-name { font-size: 11px; font-weight: 700; color: var(--text-primary); }
+        .um-doc-abbr { font-size: 9px; color: var(--text-muted); }
+
+        .um-file-name {
+            font-size: 10.5px; font-family: 'Consolas', monospace;
+            color: var(--text-secondary); max-width: 180px;
+            overflow: hidden; text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .um-file-name.empty { color: var(--text-muted); font-style: italic; }
+
+        .um-action-cell { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+        .um-choose-btn {
+            display: inline-flex; align-items: center; gap: 5px;
+            height: 28px; padding: 0 11px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--r-md);
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+            font-size: 10px; font-weight: 600;
+            cursor: pointer; transition: all .14s;
+            white-space: nowrap;
+        }
+        .um-choose-btn:hover { color: var(--text-primary); border-color: var(--cyan-border); }
         .um-upload-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            height: 26px;
-            padding: 0 11px;
+            display: inline-flex; align-items: center; gap: 5px;
+            height: 28px; padding: 0 11px;
             border: none;
             border-radius: var(--r-md);
             background: var(--cyan);
             color: #0B0E1A;
-            font-size: 10px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: opacity .15s ease;
+            font-size: 10px; font-weight: 700;
+            cursor: pointer; transition: opacity .14s;
             white-space: nowrap;
         }
         .um-upload-btn:hover { opacity: .85; }
         .um-upload-btn:disabled { opacity: .35; cursor: not-allowed; }
 
-        /* UPLOAD ROW DOC TYPES */
-        .um-doc-type {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .um-doc-icon {
-            width: 26px;
-            height: 26px;
-            border-radius: var(--r-sm);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-        .um-doc-icon.cyan   { background: var(--cyan-dim); color: var(--cyan); border: 1px solid var(--cyan-border); }
-        .um-doc-icon.purple { background: var(--purple-dim); color: var(--purple); border: 1px solid rgba(167, 139, 250, 0.28); }
-        .um-doc-icon.blue   { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(59, 158, 255, 0.25); }
-
-        .um-doc-label {
-            display: flex;
-            flex-direction: column;
-            gap: 1px;
-        }
-        .um-doc-name {
-            font-size: 11px;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-        .um-doc-abbr {
-            font-size: 9px;
-            color: var(--text-muted);
-        }
-        .um-file-name {
-            font-size: 10.5px;
-            font-family: 'Consolas', monospace;
-            color: var(--text-secondary);
-            max-width: 180px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        .um-file-name.empty {
-            color: var(--text-muted);
-            font-style: italic;
-        }
-
-        /* ========= PANEL FOOTERS (Fixed Bottom) ========= */
+        /* Footer cố định dưới cùng panel */
         .um-foot {
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            gap: 8px;
-            padding: 12px 20px;
-            border-top: 1px solid var(--border-light);
-            background: linear-gradient(180deg, rgba(18, 23, 40, 0.9) 0%, rgba(26, 32, 53, 0.75) 100%);
+            display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+            padding: 12px 20px; border-top: 1px solid var(--border);
+            background: var(--bg-elevated);
             flex-shrink: 0;
         }
         .um-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            height: 32px;
-            padding: 0 16px;
+            display: inline-flex; align-items: center; gap: 6px;
+            height: 32px; padding: 0 16px;
             border-radius: var(--r-md);
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            transition: all .15s ease;
+            font-size: 12px; font-weight: 600;
+            cursor: pointer; border: none;
+            transition: opacity .14s;
         }
-        .um-btn-cancel {
-            background: rgba(30, 41, 73, 0.3);
-            color: var(--text-secondary);
-            border: 1px solid var(--border-light) !important;
-        }
-        .um-btn-cancel:hover {
-            color: var(--text-primary);
-            border-color: var(--cyan-border);
-            background: rgba(6, 212, 255, 0.08);
-        }
+        .um-btn-cancel { background: var(--bg-surface); color: var(--text-secondary); border: 1px solid var(--border-light) !important; }
+        .um-btn-cancel:hover { color: var(--text-primary); }
     </style>
 </head>
 <body>
@@ -1141,11 +974,9 @@
                 </div>
             </div>
 
-            <!-- RIGHT: right-pane wrapper (empty by default) -->
-            <div class="right-pane empty" id="rightPane">
-                
-                <!-- Detail Pane -->
-                <aside class="detail-pane" id="detailPane">
+            <!-- RIGHT: detail pane (empty by default) -->
+            <aside class="detail-pane empty" id="detailPane">
+                <div class="detail-inner">
                     <!-- Header -->
                     <div class="dp-head">
                         <div class="dp-head-l">
@@ -1226,9 +1057,18 @@
                     <div class="dp-body">
                         <div id="docTabContent"><!-- rendered by JS --></div>
                     </div>
-                </aside>
+                </div>
 
-                <!-- Upload Panel (trượt đè lên detail pane) -->
+                <!-- Empty placeholder -->
+                <div class="empty-state" id="emptyState">
+                    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14,2 14,8 20,8"/>
+                    </svg>
+                    <p>Chọn 1 chuyến bay ở bảng bên trái để xem chi tiết &amp; tài liệu</p>
+                </div>
+
+                <!-- ============ UPLOAD PANEL (slide-in over detail pane) ============ -->
                 <div class="upload-panel" id="uploadPanel">
                     <div class="um-head">
                         <div class="um-title-wrap">
@@ -1279,15 +1119,23 @@
                     </div>
                 </div>
 
-                <!-- Empty placeholder -->
-                <div class="empty-state" id="emptyState">
-                    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14,2 14,8 20,8"/>
-                    </svg>
-                    <p>Chọn 1 chuyến bay ở bảng bên trái để xem chi tiết &amp; tài liệu</p>
-                </div>
+            </aside>
+
+        </div><!-- /content -->
+
+        <!-- STATUS BAR -->
+        <div class="statusbar">
+            <div class="live-wrap">
+                <div class="live-dot"></div>
+                <span>Live</span>
             </div>
+            <span>Showing: <b id="cntShow" style="color:var(--text-primary)">0</b> / <span id="cntTotal">0</span> flights</span>
+            <span class="sb-right">TOSS POC — Flight Load Control v2.0 (UTC)</span>
+        </div>
+
+    </div><!-- end .main -->
+</div><!-- end .app -->
+
 
 <!-- Hidden file inputs per doc type -->
 <input type="file" id="fileInput-LS" hidden accept=".pdf,.xml,.txt">
@@ -1556,10 +1404,10 @@ function selectRow(idx) {
     document.querySelectorAll('#tbody tr').forEach((tr, i) => {
         tr.classList.toggle('selected', i === idx);
     });
-    document.getElementById('content').classList.add('split');
-    document.getElementById('rightPane').classList.remove('empty');
-    document.getElementById('detailPane').style.display = 'flex';
     document.getElementById('uploadPanel').classList.remove('open');
+    document.getElementById('content').classList.add('split');
+    document.getElementById('detailPane').classList.remove('empty');
+    document.getElementById('emptyState').style.display = 'none';
     activeTab = 'LS';
     renderDetail(window._currentRows[idx]);
     setTimeout(() => { fixStickyHeaders(); fixStickyOffsets(); }, 260);
@@ -1567,11 +1415,11 @@ function selectRow(idx) {
 
 function closeDetail() {
     selectedIdx = -1;
+    document.getElementById('uploadPanel').classList.remove('open');
     document.querySelectorAll('#tbody tr').forEach(tr => tr.classList.remove('selected'));
     document.getElementById('content').classList.remove('split');
-    document.getElementById('rightPane').classList.add('empty');
-    document.getElementById('detailPane').style.display = 'none';
-    document.getElementById('uploadPanel').classList.remove('open');
+    document.getElementById('detailPane').classList.add('empty');
+    document.getElementById('emptyState').style.display = '';
     setTimeout(() => { fixStickyHeaders(); fixStickyOffsets(); }, 260);
 }
 
@@ -1648,7 +1496,7 @@ function renderTabContent(r, tab) {
             <table class="doc-table">
                 <thead>
                     <tr>
-                        <th style="width: 110px;">Document Type</th>
+                        <th>Document Type</th>
                         <th>Document Name</th>
                         <th>Upload Date</th>
                         <th>Rev</th>
@@ -1659,14 +1507,17 @@ function renderTabContent(r, tab) {
                 <tbody>
                     <tr>
                         <td>
-                            <span class="doc-type-badge ${def.key.toLowerCase()}">${def.abbr}</span>
+                            <div class="um-doc-type">
+                                <div class="um-doc-icon ${def.key === 'LS' ? 'cyan' : def.key === 'GD' ? 'purple' : 'blue'}">${def.key}</div>
+                                <div class="um-doc-label">
+                                    <div class="um-doc-name">${def.name}</div>
+                                    <div class="um-doc-abbr">${def.key}</div>
+                                </div>
+                            </div>
                         </td>
                         <td>
                             ${hasFile
-                                ? `<div class="dt-name">
-                                       <span class="dt-name-main">${def.name}</span>
-                                       <span class="dt-name-sub">${fileName}</span>
-                                   </div>`
+                                ? `<span style="font-size:11px; color:var(--text-primary); font-family:'Consolas', monospace;">${fileName}</span>`
                                 : `<span class="dt-empty">Chưa có tài liệu</span>`
                             }
                         </td>
@@ -1709,10 +1560,8 @@ function renderTabContent(r, tab) {
    UPLOAD MODAL (redesigned)
    ========================================================= */
 function openUploadModal(idx) {
-    selectedIdx = idx;
-    document.querySelectorAll('#tbody tr').forEach((tr, i) => {
-        tr.classList.toggle('selected', i === idx);
-    });
+    // Luôn mở detail pane trước để upload panel slide ra chuẩn xác
+    selectRow(idx);
 
     const r = window._currentRows[idx];
     if (!r) return;
@@ -1818,14 +1667,8 @@ function openUploadModal(idx) {
         tbody.appendChild(tr);
     });
 
-    // Mở right pane và split layout
-    document.getElementById('content').classList.add('split');
-    document.getElementById('rightPane').classList.remove('empty');
-    document.getElementById('detailPane').style.display = 'flex'; // Vẫn hiện detail bên dưới
-
-    // Mở slide-in panel đè lên detail pane
+    // Mở slide-in panel
     openUploadPanel();
-    setTimeout(() => { fixStickyHeaders(); fixStickyOffsets(); }, 260);
 }
 
 /* File input change listeners */
@@ -1854,11 +1697,18 @@ function openUploadPanel() {
 }
 function closeUploadPanel() {
     document.getElementById('uploadPanel').classList.remove('open');
-    closeDetail(); // Đóng đồng thời cả panel chi tiết và split layout!
+    closeDetail();
 }
-// ESC key đóng panel
+// ESC key đóng detail/panel
 document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeUploadPanel();
+    if (e.key === 'Escape') {
+        const uploadOpen = document.getElementById('uploadPanel').classList.contains('open');
+        if (uploadOpen) {
+            closeUploadPanel();
+        } else if (selectedIdx >= 0) {
+            closeDetail();
+        }
+    }
 });
 
 /* =========================================================
