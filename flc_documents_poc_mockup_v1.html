@@ -1,0 +1,1730 @@
+<!DOCTYPE html>
+<!--
+  FLC — Flight Load Control · Document Management (POC mockup) v2
+  Thay đổi so với v1:
+  - Bảng: xóa cột NOTOC CGO/BAG; thêm cột Action (Upload + Detail)
+  - Detail pane: thay card-list → tab LS/GD/PM, mỗi tab có bảng tài liệu
+  - Upload modal: redesign thành layout thông tin chuyến bay + bảng 3 doc type
+  Nguồn: ba/workspace/input/domain-knowledge/Man hinh TOSS.xlsx → sheet "Man hinh Document"
+  Tuân thủ CLAUDE.md §0: tên cột giữ nguyên theo source.
+-->
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Load Control — Documents v2</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-base:      #0B0E1A;
+            --bg-sidebar:   #0E1220;
+            --bg-surface:   #121728;
+            --bg-elevated:  #1A2035;
+            --bg-hover:     #151C30;
+
+            --text-primary:  #E2E8F8;
+            --text-secondary:#8892B0;
+            --text-muted:    #4A5370;
+
+            --cyan:        #06D4FF;
+            --cyan-dim:    rgba(6, 212, 255, 0.12);
+            --cyan-border: rgba(6, 212, 255, 0.28);
+
+            --green:       #1DD68C;
+            --green-dim:   rgba(29, 214, 140, 0.18);
+
+            --orange:      #F59E0B;
+            --orange-dim:  rgba(245, 158, 11, 0.18);
+
+            --red:         #FF4757;
+            --red-dim:     rgba(255, 71, 87, 0.14);
+
+            --blue:        #3B9EFF;
+            --blue-dim:    rgba(59, 158, 255, 0.16);
+
+            --purple:      #A78BFA;
+            --purple-dim:  rgba(167, 139, 250, 0.18);
+
+            --border:       #1C2236;
+            --border-light: #232C44;
+
+            --r-sm: 4px;
+            --r-md: 6px;
+            --r-lg: 10px;
+            --r-xl: 14px;
+            --r-full: 9999px;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Segoe UI', -apple-system, system-ui, sans-serif;
+            background: var(--bg-base);
+            color: var(--text-primary);
+            font-size: 13px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ========= CUSTOM SCROLLBAR ========= */
+        * { scrollbar-width: thin; scrollbar-color: #2A3450 transparent; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; background: transparent; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #2A3450; border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; transition: background .15s; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(6, 212, 255, 0.45); background-clip: padding-box; border: 2px solid transparent; }
+        ::-webkit-scrollbar-thumb:active { background: var(--cyan); background-clip: padding-box; border: 2px solid transparent; }
+        ::-webkit-scrollbar-corner { background: transparent; }
+        .table-wrap::-webkit-scrollbar { width: 10px; height: 10px; }
+        .table-wrap::-webkit-scrollbar-thumb { background: #2A3450; border: 3px solid transparent; background-clip: padding-box; }
+        .table-wrap::-webkit-scrollbar-thumb:hover { background: rgba(6, 212, 255, 0.4); background-clip: padding-box; }
+
+        /* ========= APP SHELL ========= */
+        .app { display: flex; height: 100vh; width: 100vw; overflow: hidden; }
+
+        /* ========= SIDEBAR ========= */
+        .sidebar {
+            width: 210px; min-width: 210px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            transition: width .22s ease, min-width .22s ease;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .sidebar.collapsed { width: 48px; min-width: 48px; cursor: pointer; }
+        .sidebar.collapsed * { pointer-events: none; }
+
+        .sidebar-logo {
+            display: flex; align-items: center; gap: 10px;
+            padding: 13px 12px;
+            border-bottom: 1px solid var(--border);
+            min-height: 56px; white-space: nowrap;
+        }
+        .sidebar.collapsed .sidebar-logo { justify-content: center; padding: 13px 0; }
+        .logo-lotus { flex-shrink: 0; width: 30px; height: 30px; }
+        .logo-texts { display: flex; flex-direction: column; gap: 1px; }
+        .logo-name { font-size: 10px; font-weight: 800; color: var(--text-primary); letter-spacing: .06em; text-transform: uppercase; }
+        .logo-sub  { font-size: 9px;  font-weight: 500; color: var(--text-muted); letter-spacing: .04em; }
+        .sidebar.collapsed .logo-texts { display: none; }
+
+        .sidebar-nav { flex: 1; padding: 8px 0; overflow-y: auto; }
+        .nav-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 14px; cursor: pointer; white-space: nowrap;
+            color: var(--text-secondary); border: none; background: none;
+            width: 100%; text-align: left;
+            border-left: 2px solid transparent;
+            transition: all .16s ease;
+        }
+        .nav-item:hover { background: var(--bg-elevated); color: var(--text-primary); }
+        .nav-item.active {
+            background: rgba(6, 212, 255, .13);
+            color: var(--cyan);
+            border-left-color: transparent;
+            border-radius: 8px;
+            margin: 0 8px;
+            width: calc(100% - 16px);
+        }
+        .sidebar.collapsed .nav-item.active { background: none; margin: 0; width: 100%; border-radius: 0; }
+        .sidebar.collapsed .nav-item.active .nav-icon { background: rgba(6, 212, 255, .15); border-radius: 8px; }
+        .nav-icon { width: 18px; height: 18px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .nav-label { font-size: 12px; font-weight: 500; }
+        .sidebar.collapsed .nav-label { display: none; }
+        .sidebar.collapsed .nav-item { justify-content: center; padding: 10px 0; }
+
+        .sb-bottom { border-top: 1px solid var(--border); padding: 8px 0 6px; flex-shrink: 0; }
+        .sb-hide-wrap { padding: 4px 12px 8px; }
+        .sidebar.collapsed .sb-hide-wrap { display: none; }
+        .sb-hide-pill {
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            width: 100%; height: 30px;
+            background: none;
+            border: 1px solid var(--border-light);
+            border-radius: var(--r-full);
+            color: var(--text-secondary); font-size: 11px; font-weight: 500;
+            cursor: pointer; white-space: nowrap;
+            transition: all .15s;
+        }
+        .sb-hide-pill:hover { color: var(--text-primary); border-color: var(--cyan-border); }
+        .sb-icons { display: flex; align-items: center; padding: 2px 14px; gap: 4px; }
+        .sidebar.collapsed .sb-icons { flex-direction: column; padding: 4px 0; align-items: center; gap: 2px; }
+        .sb-user { display: flex; align-items: center; padding: 4px 10px 2px; gap: 6px; }
+        .sidebar.collapsed .sb-user { flex-direction: column; padding: 4px 0 2px; align-items: center; gap: 4px; }
+        .sb-avatar-wrap { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+        .sidebar.collapsed .sb-avatar-wrap { flex: none; }
+        .sb-avatar-container { position: relative; flex-shrink: 0; }
+        .sb-avatar {
+            width: 28px; height: 28px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--cyan) 0%, #0055CC 100%);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: 800; color: #fff;
+        }
+        .sb-online-dot {
+            position: absolute; bottom: -1px; right: -1px;
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--green); border: 1.5px solid var(--bg-sidebar);
+        }
+        .sb-user-detail { min-width: 0; flex: 1; }
+        .sb-user-name  { font-size: 11px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sb-user-email { font-size: 9px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sidebar.collapsed .sb-user-detail { display: none; }
+
+        .sb-icon-btn {
+            width: 28px; height: 28px;
+            display: flex; align-items: center; justify-content: center;
+            background: none; border: none; cursor: pointer;
+            color: var(--text-muted); border-radius: var(--r-md);
+            flex-shrink: 0; transition: all .15s;
+        }
+        .sb-icon-btn:hover { color: var(--text-primary); background: var(--bg-elevated); }
+        .sb-expand-btn {
+            display: none;
+            width: 100%; padding: 5px 0 2px;
+            background: none; border: none; cursor: pointer;
+            color: var(--text-muted);
+            align-items: center; justify-content: center;
+            transition: color .15s;
+        }
+        .sb-expand-btn:hover { color: var(--text-primary); }
+        .sidebar.collapsed .sb-expand-btn { display: flex; }
+
+        /* ========= MAIN ========= */
+        .main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
+
+        /* TOPBAR */
+        .topbar {
+            display: flex; align-items: center;
+            padding: 0 20px; gap: 16px;
+            background: var(--bg-sidebar);
+            border-bottom: 1px solid var(--border);
+            height: 52px; flex-shrink: 0;
+        }
+        .topbar-title { font-size: 16px; font-weight: 700; color: var(--cyan); letter-spacing: .07em; text-transform: uppercase; }
+        .topbar-sub {
+            font-size: 11px; color: var(--text-muted);
+            letter-spacing: .04em; text-transform: uppercase;
+            margin-left: 6px; padding-left: 12px;
+            border-left: 1px solid var(--border);
+        }
+        .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+        .op-date { font-size: 11px; color: var(--text-secondary); }
+        .op-date b { color: var(--text-primary); font-weight: 600; }
+        .op-time { font-size: 12px; font-weight: 700; color: var(--cyan); font-variant-numeric: tabular-nums; }
+
+        /* FILTER BAR */
+        .filter-bar { background: var(--bg-base); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+        .filter-strip { display: flex; align-items: center; gap: 8px; padding: 0 20px; height: 38px; }
+        .filter-strip-right { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+        .filter-inputs { overflow: hidden; max-height: 52px; opacity: 1; transition: max-height .22s ease, opacity .18s ease, padding .22s ease; }
+        .filter-inputs.collapsed { max-height: 0; opacity: 0; }
+        .filter-inputs-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 0 20px 8px; }
+        .fi { color: var(--text-muted); display: flex; align-items: center; flex-shrink: 0; }
+        .filter-lbl { font-size: 12px; font-weight: 600; color: var(--text-secondary); flex-shrink: 0; }
+        .f-input, .f-select {
+            height: 30px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-light);
+            border-radius: var(--r-md);
+            color: var(--text-primary);
+            font-size: 11px; font-family: inherit;
+            padding: 0 8px; outline: none;
+            transition: border-color .15s;
+        }
+        .f-input { width: 100px; }
+        .f-input:focus, .f-select:focus, .f-input:hover, .f-select:hover { border-color: var(--cyan-border); }
+        .f-select { padding-right: 20px; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none' stroke='%236B7494' stroke-width='1.5'%3E%3Cpath d='M1 1l4 4 4-4'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 6px center; }
+        .f-select option { background: #1A2035; }
+        .f-date { width: 130px; }
+        .f-date::-webkit-calendar-picker-indicator { filter: invert(.4); cursor: pointer; }
+
+        .btn-search {
+            display: flex; align-items: center; gap: 5px;
+            height: 30px; padding: 0 14px;
+            background: var(--cyan); border: none; border-radius: var(--r-md);
+            color: #0B0E1A; font-size: 11px; font-weight: 700;
+            cursor: pointer; white-space: nowrap; flex-shrink: 0;
+            transition: opacity .15s;
+        }
+        .btn-search:hover { opacity: .85; }
+        .btn-clear {
+            display: flex; align-items: center; gap: 4px;
+            height: 30px; padding: 0 8px;
+            background: none; border: none;
+            color: var(--text-secondary); font-size: 11px; font-weight: 500;
+            cursor: pointer; white-space: nowrap; flex-shrink: 0;
+            transition: color .15s;
+        }
+        .btn-clear:hover { color: var(--text-primary); }
+        .btn-tbl-setting {
+            display: flex; align-items: center; gap: 6px;
+            height: 30px; padding: 0 12px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-light); border-radius: var(--r-md);
+            color: var(--text-secondary); font-size: 11px; font-weight: 500;
+            cursor: pointer; white-space: nowrap; flex-shrink: 0;
+            margin-left: auto;
+            transition: all .15s;
+        }
+        .btn-tbl-setting:hover { color: var(--text-primary); border-color: var(--cyan-border); }
+        .collapse-btn {
+            width: 24px; height: 24px;
+            display: flex; align-items: center; justify-content: center;
+            background: none; border: none;
+            color: var(--text-muted); cursor: pointer;
+            flex-shrink: 0; transition: color .15s;
+        }
+        .collapse-btn:hover { color: var(--text-primary); }
+        .collapse-btn svg { transition: transform .2s; }
+        .collapse-btn.flipped svg { transform: rotate(180deg); }
+
+        /* ========= CONTENT SPLIT ========= */
+        .content { flex: 1; display: flex; min-height: 0; overflow: hidden; }
+        .table-pane {
+            flex: 1; min-width: 0;
+            display: flex; flex-direction: column; overflow: hidden;
+            transition: flex .25s ease;
+        }
+        .content.split .table-pane { flex: 0 0 55%; }
+        @media (max-width: 1200px) { .content.split .table-pane { flex: 0 0 48%; } }
+
+        /* TABLE */
+        .table-wrap { flex: 1; overflow: auto; position: relative; }
+        table { width: max-content; min-width: 100%; border-collapse: collapse; white-space: nowrap; }
+
+        thead .group-row th {
+            background: #0D1020;
+            color: var(--text-muted);
+            font-size: 9px; font-weight: 700;
+            letter-spacing: .1em; text-transform: uppercase;
+            padding: 4px 10px; text-align: center;
+            position: sticky; top: 0; z-index: 9;
+            border-bottom: 1px solid var(--border);
+        }
+        thead .group-row th:first-child { text-align: left; padding-left: 14px; }
+        thead .col-row th {
+            background: var(--bg-sidebar);
+            color: var(--text-muted);
+            font-size: 10px; font-weight: 600;
+            letter-spacing: .04em; text-transform: uppercase;
+            padding: 7px 10px; text-align: center;
+            position: sticky; z-index: 10;
+            border-bottom: 1px solid var(--border);
+            user-select: none; cursor: pointer; white-space: nowrap;
+        }
+        thead .col-row th:hover { color: var(--cyan); }
+        thead .col-row th.th-l { text-align: left; }
+
+        [data-tip] { position: relative; }
+        [data-tip]::before {
+            content: attr(data-tip);
+            position: absolute; bottom: calc(100% + 6px);
+            left: 50%; transform: translateX(-50%);
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-light);
+            color: var(--text-primary);
+            padding: 5px 9px; border-radius: var(--r-sm);
+            font-size: 10px; font-weight: 400; line-height: 1.5;
+            width: max-content; max-width: 220px;
+            opacity: 0; pointer-events: none; z-index: 100;
+            transition: opacity .18s;
+        }
+        [data-tip]:hover::before { opacity: 1; }
+
+        .sc1 { position: sticky; left: 0;   z-index: 6; background: var(--bg-sidebar); }
+        .sc2 { position: sticky; left: 80px; z-index: 6; background: var(--bg-sidebar); }
+        thead .sc1, thead .sc2 { z-index: 11 !important; }
+        tbody tr:hover td.sc1, tbody tr:hover td.sc2 { background: var(--bg-hover); }
+        tbody tr.selected td.sc1, tbody tr.selected td.sc2 { background: rgba(6, 212, 255, 0.08); }
+
+        tbody td {
+            padding: 5px 10px; text-align: center;
+            border-bottom: 1px solid var(--border);
+            font-size: 11px; vertical-align: middle;
+            color: var(--text-primary);
+        }
+        tbody td.td-l { text-align: left; }
+        tbody tr { transition: background .12s; cursor: pointer; }
+        tbody tr:hover { background: var(--bg-hover); }
+        tbody tr.selected { background: rgba(6, 212, 255, 0.08); border-left: 2px solid var(--cyan); }
+
+        /* CELL TYPES */
+        .cell-reg  { font-weight: 700; color: var(--cyan); }
+        .cell-flt  { font-weight: 600; }
+        .cell-dim  { color: var(--text-secondary); }
+        .cell-mono { font-family: 'Consolas', 'Courier New', monospace; font-size: 11px; }
+        .cell-dash { color: var(--text-muted); }
+
+        /* Document status cell */
+        .doc-cell {
+            display: inline-flex; flex-direction: column; align-items: center;
+            gap: 1px; line-height: 1.25; padding: 2px 0;
+        }
+        .doc-rev   { font-family: 'Consolas', monospace; font-size: 11px; font-weight: 700; color: var(--cyan); }
+        .doc-rev.dash { color: var(--text-muted); }
+        .doc-time  { font-family: 'Consolas', monospace; font-size: 9.5px; color: var(--text-secondary); }
+        .doc-ack {
+            display: inline-flex; align-items: center; gap: 3px;
+            font-size: 9px; font-weight: 700;
+            padding: 1px 7px; border-radius: var(--r-full);
+            margin-top: 1px; letter-spacing: .04em;
+        }
+        .ack-ok  { background: var(--green-dim); color: var(--green); }
+        .ack-pen { background: var(--orange-dim); color: var(--orange); }
+        .ack-na  { background: #252C42; color: var(--text-muted); }
+        .ack-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+        /* ========= ACTION CELL (bảng danh sách) ========= */
+        .action-cell { text-align: center !important; white-space: nowrap; }
+        .tbl-action-btn {
+            display: inline-flex; align-items: center; gap: 4px;
+            height: 26px; padding: 0 9px;
+            border-radius: var(--r-md);
+            font-size: 10px; font-weight: 600;
+            cursor: pointer; border: 1px solid transparent;
+            transition: all .14s;
+            white-space: nowrap;
+        }
+        .tbl-action-btn.upload {
+            background: var(--cyan-dim);
+            color: var(--cyan);
+            border-color: var(--cyan-border);
+        }
+        .tbl-action-btn.upload:hover {
+            background: rgba(6,212,255,0.2);
+            border-color: var(--cyan);
+        }
+        .tbl-action-btn.detail {
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+            border-color: var(--border-light);
+            margin-left: 4px;
+        }
+        .tbl-action-btn.detail:hover {
+            color: var(--text-primary);
+            border-color: var(--cyan-border);
+        }
+
+        /* STATUS BAR */
+        .statusbar {
+            display: flex; align-items: center; gap: 16px;
+            padding: 0 20px; height: 27px;
+            background: var(--bg-sidebar);
+            border-top: 1px solid var(--border);
+            font-size: 10px; color: var(--text-muted);
+            flex-shrink: 0;
+        }
+        .live-wrap { display: flex; align-items: center; gap: 5px; font-weight: 500; color: var(--text-secondary); }
+        .live-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+        .live-dot { animation: blink 2.2s ease infinite; }
+        .sb-right { margin-left: auto; }
+
+        /* ========= DETAIL PANEL (right side) ========= */
+        .detail-pane {
+            flex: 0 0 0;
+            min-width: 0;
+            overflow: hidden;
+            background: var(--bg-surface);
+            border-left: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            transition: flex .25s ease, min-width .25s ease;
+        }
+        .content.split .detail-pane {
+            flex: 0 0 45%;
+            min-width: 480px;
+        }
+        @media (max-width: 1200px) { .content.split .detail-pane { flex: 0 0 52%; min-width: 400px; } }
+        .detail-pane.empty .detail-inner { display: none; }
+        .detail-inner { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+
+        .dp-head {
+            display: flex; align-items: flex-start; justify-content: space-between;
+            padding: 14px 18px 12px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-surface) 100%);
+            flex-shrink: 0;
+        }
+        .dp-head-l { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        .dp-flt {
+            display: flex; align-items: center; gap: 10px;
+            font-size: 17px; font-weight: 800; color: var(--cyan); letter-spacing: .05em;
+        }
+        .dp-reg { font-size: 11px; color: var(--text-secondary); font-weight: 600; letter-spacing: .05em; }
+        .dp-route {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 13px; font-weight: 700; color: var(--text-primary);
+            margin-top: 4px;
+        }
+        .dp-route svg { color: var(--cyan); }
+        .dp-close {
+            width: 28px; height: 28px;
+            display: flex; align-items: center; justify-content: center;
+            background: none; border: 1px solid var(--border-light);
+            color: var(--text-muted); cursor: pointer;
+            border-radius: var(--r-md); transition: all .14s;
+            flex-shrink: 0;
+        }
+        .dp-close:hover { color: var(--text-primary); border-color: var(--cyan-border); background: var(--bg-elevated); }
+
+        .dp-meta {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 1px;
+            background: var(--border);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .dp-meta-item { background: var(--bg-surface); padding: 8px 12px; }
+        .dp-meta-lbl  { font-size: 9px; font-weight: 700; color: var(--text-muted); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 2px; }
+        .dp-meta-val  { font-size: 12px; font-weight: 700; color: var(--text-primary); font-family: 'Consolas', monospace; }
+
+        /* ========= TAB BAR (Detail Pane) ========= */
+        .dp-tab-bar {
+            display: flex; align-items: stretch;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-elevated);
+            flex-shrink: 0;
+            padding: 0 18px;
+        }
+        .dp-tab {
+            display: flex; align-items: center; gap: 6px;
+            padding: 10px 16px 9px;
+            font-size: 11px; font-weight: 600; letter-spacing: .04em;
+            color: var(--text-secondary);
+            border: none; background: none; cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all .15s;
+            white-space: nowrap;
+        }
+        .dp-tab:hover { color: var(--text-primary); }
+        .dp-tab.active {
+            color: var(--cyan);
+            border-bottom-color: var(--cyan);
+        }
+        .dp-tab-badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 16px; height: 16px; border-radius: 50%;
+            font-size: 8px; font-weight: 700;
+        }
+        .badge-ok  { background: var(--green-dim); color: var(--green); }
+        .badge-pen { background: var(--orange-dim); color: var(--orange); }
+        .badge-na  { background: #252C42; color: var(--text-muted); }
+
+        /* ========= DOC TABLE (trong Detail Pane) ========= */
+        .dp-body {
+            flex: 1; min-height: 0;
+            overflow-y: auto;
+            padding: 14px 18px 20px;
+        }
+
+        .doc-table-wrap {
+            border: 1px solid var(--border-light);
+            border-radius: var(--r-lg);
+            overflow: hidden;
+            margin-top: 2px;
+        }
+        .doc-table {
+            width: 100%;
+            border-collapse: collapse;
+            white-space: nowrap;
+        }
+        .doc-table thead th {
+            background: var(--bg-elevated);
+            color: var(--text-muted);
+            font-size: 9px; font-weight: 700;
+            letter-spacing: .08em; text-transform: uppercase;
+            padding: 8px 12px; text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        .doc-table thead th:last-child { text-align: center; }
+        .doc-table tbody td {
+            padding: 10px 12px;
+            font-size: 11px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-surface);
+            text-align: left;
+            vertical-align: middle;
+        }
+        .doc-table tbody tr:last-child td { border-bottom: none; }
+        .doc-table tbody tr:hover td { background: var(--bg-hover); }
+        .doc-table tbody td:last-child { text-align: center; }
+
+        .dt-name {
+            display: flex; flex-direction: column; gap: 2px;
+        }
+        .dt-name-main { font-weight: 600; color: var(--text-primary); font-size: 11px; }
+        .dt-name-sub { font-size: 9.5px; color: var(--text-muted); font-family: 'Consolas', monospace; }
+        .dt-empty { color: var(--text-muted); font-style: italic; }
+
+        .dt-rev { font-family: 'Consolas', monospace; font-weight: 700; color: var(--cyan); font-size: 11px; }
+        .dt-rev.empty { color: var(--text-muted); }
+        .dt-date { font-family: 'Consolas', monospace; font-size: 10.5px; color: var(--text-secondary); }
+
+        .dt-status {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 9px; font-weight: 700; padding: 2px 8px;
+            border-radius: var(--r-full); letter-spacing: .04em;
+        }
+        .dt-status.ok     { background: var(--green-dim); color: var(--green); }
+        .dt-status.pending{ background: var(--orange-dim); color: var(--orange); }
+        .dt-status.missing{ background: #252C42; color: var(--text-muted); }
+        .dt-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+        .dt-action-wrap { display: flex; align-items: center; justify-content: center; gap: 4px; }
+        .dt-btn {
+            display: inline-flex; align-items: center; gap: 4px;
+            height: 26px; padding: 0 9px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--r-md);
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+            font-size: 10px; font-weight: 600;
+            cursor: pointer; transition: all .14s;
+            white-space: nowrap;
+        }
+        .dt-btn:hover { color: var(--text-primary); border-color: var(--cyan-border); }
+        .dt-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+        /* Empty state */
+        .empty-state {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            color: var(--text-muted); gap: 8px;
+            pointer-events: none;
+        }
+        .empty-state svg { color: var(--border-light); }
+        .empty-state p { font-size: 12px; }
+
+        /* ========= UPLOAD PANEL (slide-in from right) ========= */
+
+        /* Backdrop overlay */
+        .up-backdrop {
+            position: fixed; inset: 0; z-index: 200;
+            background: rgba(0,0,0,.55);
+            backdrop-filter: blur(3px);
+            opacity: 0; pointer-events: none;
+            transition: opacity .28s ease;
+        }
+        .up-backdrop.visible { opacity: 1; pointer-events: all; }
+
+        /* Slide-in panel */
+        .upload-panel {
+            position: fixed; top: 0; right: 0; z-index: 201;
+            height: 100vh;
+            width: min(760px, 92vw);
+            background: var(--bg-surface);
+            border-left: 1px solid var(--border-light);
+            box-shadow: -12px 0 60px rgba(0,0,0,.55);
+            display: flex; flex-direction: column;
+            transform: translateX(100%);
+            transition: transform .3s cubic-bezier(.25,.46,.45,.94);
+            overflow: hidden;
+        }
+        .upload-panel.open { transform: translateX(0); }
+
+        /* Upload panel — header */
+        .um-head {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 20px; border-bottom: 1px solid var(--border);
+            background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-surface) 100%);
+            flex-shrink: 0;
+        }
+        .um-title-wrap { display: flex; flex-direction: column; gap: 2px; }
+        .um-title { font-size: 15px; font-weight: 700; color: var(--cyan); }
+        .um-subtitle { font-size: 10px; color: var(--text-muted); letter-spacing: .06em; text-transform: uppercase; }
+        .um-close {
+            width: 28px; height: 28px;
+            display: flex; align-items: center; justify-content: center;
+            background: none; border: 1px solid var(--border-light); color: var(--text-muted);
+            cursor: pointer; border-radius: var(--r-md); transition: all .14s;
+        }
+        .um-close:hover { background: var(--bg-elevated); color: var(--text-primary); border-color: var(--cyan-border); }
+
+        /* Flight info bar */
+        .um-flight-info {
+            display: flex; align-items: center; flex-wrap: wrap; gap: 6px 20px;
+            padding: 12px 20px;
+            background: var(--bg-elevated);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .um-fi-item { display: flex; flex-direction: column; gap: 1px; }
+        .um-fi-lbl { font-size: 8.5px; font-weight: 700; color: var(--text-muted); letter-spacing: .1em; text-transform: uppercase; }
+        .um-fi-val { font-size: 12px; font-weight: 700; color: var(--text-primary); font-family: 'Consolas', monospace; }
+        .um-fi-val.cyan { color: var(--cyan); }
+        .um-fi-sep { width: 1px; height: 28px; background: var(--border-light); align-self: center; }
+
+        /* Scrollable body */
+        .um-body { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 20px 20px; }
+        .um-section-title {
+            font-size: 10px; font-weight: 700; color: var(--text-muted);
+            letter-spacing: .1em; text-transform: uppercase;
+            margin-bottom: 10px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .um-section-title::after { content:''; flex:1; height:1px; background: var(--border); }
+
+        .um-table-wrap {
+            border: 1px solid var(--border-light);
+            border-radius: var(--r-lg);
+            overflow: auto;
+        }
+        .um-table {
+            width: 100%;
+            border-collapse: collapse;
+            white-space: nowrap;
+        }
+        .um-table thead th {
+            background: var(--bg-elevated);
+            color: var(--text-muted);
+            font-size: 9px; font-weight: 700;
+            letter-spacing: .08em; text-transform: uppercase;
+            padding: 8px 12px; text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        .um-table thead th:last-child { text-align: center; }
+        .um-table tbody td {
+            padding: 10px 12px;
+            font-size: 11px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-surface);
+            vertical-align: middle;
+        }
+        .um-table tbody tr:last-child td { border-bottom: none; }
+        .um-table tbody tr:hover td { background: var(--bg-hover); }
+        .um-table tbody td:last-child { text-align: right; }
+
+        .um-doc-type { display: flex; align-items: center; gap: 8px; }
+        .um-doc-icon {
+            width: 26px; height: 26px; border-radius: var(--r-sm);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .um-doc-icon.cyan   { background: var(--cyan-dim); color: var(--cyan); }
+        .um-doc-icon.purple { background: var(--purple-dim); color: var(--purple); }
+        .um-doc-icon.blue   { background: var(--blue-dim); color: var(--blue); }
+
+        .um-doc-label { display: flex; flex-direction: column; gap: 1px; }
+        .um-doc-name { font-size: 11px; font-weight: 700; color: var(--text-primary); }
+        .um-doc-abbr { font-size: 9px; color: var(--text-muted); }
+
+        .um-file-name {
+            font-size: 10.5px; font-family: 'Consolas', monospace;
+            color: var(--text-secondary); max-width: 180px;
+            overflow: hidden; text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .um-file-name.empty { color: var(--text-muted); font-style: italic; }
+
+        .um-action-cell { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+        .um-choose-btn {
+            display: inline-flex; align-items: center; gap: 5px;
+            height: 28px; padding: 0 11px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--r-md);
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+            font-size: 10px; font-weight: 600;
+            cursor: pointer; transition: all .14s;
+            white-space: nowrap;
+        }
+        .um-choose-btn:hover { color: var(--text-primary); border-color: var(--cyan-border); }
+        .um-upload-btn {
+            display: inline-flex; align-items: center; gap: 5px;
+            height: 28px; padding: 0 11px;
+            border: none;
+            border-radius: var(--r-md);
+            background: var(--cyan);
+            color: #0B0E1A;
+            font-size: 10px; font-weight: 700;
+            cursor: pointer; transition: opacity .14s;
+            white-space: nowrap;
+        }
+        .um-upload-btn:hover { opacity: .85; }
+        .um-upload-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+        /* Footer cố định dưới cùng panel */
+        .um-foot {
+            display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+            padding: 12px 20px; border-top: 1px solid var(--border);
+            background: var(--bg-elevated);
+            flex-shrink: 0;
+        }
+        .um-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            height: 32px; padding: 0 16px;
+            border-radius: var(--r-md);
+            font-size: 12px; font-weight: 600;
+            cursor: pointer; border: none;
+            transition: opacity .14s;
+        }
+        .um-btn-cancel { background: var(--bg-surface); color: var(--text-secondary); border: 1px solid var(--border-light) !important; }
+        .um-btn-cancel:hover { color: var(--text-primary); }
+    </style>
+</head>
+<body>
+<div class="app">
+
+    <!-- ============ SIDEBAR ============ -->
+    <aside class="sidebar" id="sidebar">
+
+        <div class="sidebar-logo">
+            <svg class="logo-lotus" viewBox="0 0 44 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="pg" x1="22" y1="4" x2="22" y2="43" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stop-color="#F0C84A"/>
+                        <stop offset="100%" stop-color="#A8751A"/>
+                    </linearGradient>
+                </defs>
+                <path d="M22 43C9 43 1 33 2 19C10 27 16 36 22 43Z" fill="url(#pg)" opacity=".55"/>
+                <path d="M22 43C8 40 4 27 8 12C15 24 19 35 22 43Z" fill="url(#pg)" opacity=".72"/>
+                <path d="M22 43C13 37 10 23 15 7C20 22 21 34 22 43Z" fill="url(#pg)" opacity=".88"/>
+                <path d="M22 43C16 32 15 18 22 3C29 18 28 32 22 43Z" fill="url(#pg)"/>
+                <path d="M22 43C31 37 34 23 29 7C24 22 23 34 22 43Z" fill="url(#pg)" opacity=".88"/>
+                <path d="M22 43C36 40 40 27 36 12C29 24 25 35 22 43Z" fill="url(#pg)" opacity=".72"/>
+                <path d="M22 43C35 43 43 33 42 19C34 27 28 36 22 43Z" fill="url(#pg)" opacity=".55"/>
+                <path d="M22 43C19 34 18 22 22 8C24 18 24 32 22 43Z" fill="#FFF5C0" opacity=".18"/>
+            </svg>
+            <div class="logo-texts">
+                <span class="logo-name">Vietnam Airlines</span>
+                <span class="logo-sub">Load Control System</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <button class="nav-item">
+                <span class="nav-icon">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="3" width="20" height="14" rx="2"/>
+                        <line x1="8" y1="21" x2="16" y2="21"/>
+                        <line x1="12" y1="17" x2="12" y2="21"/>
+                    </svg>
+                </span>
+                <span class="nav-label">Flight Monitoring</span>
+            </button>
+            <button class="nav-item active">
+                <span class="nav-icon">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14,2 14,8 20,8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                        <line x1="10" y1="9" x2="8" y2="9"/>
+                    </svg>
+                </span>
+                <span class="nav-label">FLC Documents</span>
+            </button>
+            <button class="nav-item">
+                <span class="nav-icon">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/>
+                    </svg>
+                </span>
+                <span class="nav-label">Fuel Order</span>
+            </button>
+            <button class="nav-item">
+                <span class="nav-icon">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                        <polyline points="22,6 12,13 2,6"/>
+                    </svg>
+                </span>
+                <span class="nav-label">Common Docs</span>
+            </button>
+        </nav>
+
+        <div class="sb-bottom">
+            <div class="sb-hide-wrap">
+                <button class="sb-hide-pill" id="hideBtn">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="15,18 9,12 15,6"/>
+                    </svg>
+                    Hide
+                </button>
+            </div>
+            <div class="sb-icons">
+                <button class="sb-icon-btn" title="Settings">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                </button>
+                <button class="sb-icon-btn" title="Toggle theme">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                </button>
+            </div>
+            <div class="sb-user">
+                <div class="sb-avatar-wrap">
+                    <div class="sb-avatar-container">
+                        <div class="sb-avatar">L</div>
+                        <span class="sb-online-dot"></span>
+                    </div>
+                    <div class="sb-user-detail">
+                        <div class="sb-user-name">CLC Operator</div>
+                        <div class="sb-user-email">loadctrl@vietnamairlines.com</div>
+                    </div>
+                </div>
+                <button class="sb-icon-btn" title="Logout">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                </button>
+            </div>
+            <button class="sb-expand-btn" id="expandBtn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="13,17 18,12 13,7"/><polyline points="6,17 11,12 6,7"/></svg>
+            </button>
+        </div>
+    </aside>
+
+    <!-- ============ MAIN PANEL ============ -->
+    <div class="main">
+
+        <!-- TOPBAR -->
+        <header class="topbar">
+            <div class="topbar-title">Flight Load Control</div>
+            <div class="topbar-sub">Document Management</div>
+            <div class="topbar-right">
+                <span class="op-date">Operating Date: <b>24/06/2026</b></span>
+                <span class="op-time" id="clock">--:--:--Z</span>
+            </div>
+        </header>
+
+        <!-- FILTER BAR -->
+        <div class="filter-bar">
+            <div class="filter-strip">
+                <span class="fi">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polygon points="22,3 2,3 10,12.46 10,19 14,21 14,12.46"/>
+                    </svg>
+                </span>
+                <span class="filter-lbl">Filter</span>
+                <div class="filter-strip-right">
+                    <button class="btn-tbl-setting">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+                            <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+                        </svg>
+                        Table Setting
+                    </button>
+                    <button class="collapse-btn" id="collapseBtn" onclick="toggleFilter()">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="18,15 12,9 6,15"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="filter-inputs" id="filterInputs">
+                <div class="filter-inputs-row">
+                    <input type="date" class="f-input f-date" id="fFromDate" value="2026-06-23" title="EDD From">
+                    <input type="date" class="f-input f-date" id="fToDate"   value="2026-06-24" title="EDD To">
+                    <input type="text" class="f-input" id="fFltNo" placeholder="FLIGHT" style="width:96px">
+                    <input type="text" class="f-input" id="fReg"   placeholder="ACREG"  style="width:96px">
+
+                    <select class="f-select" id="fAcType" style="width:96px">
+                        <option value="">ACTYPE</option>
+                        <option>A321</option><option>A320</option>
+                        <option>A330</option><option>A350</option><option>B787</option>
+                    </select>
+
+                    <select class="f-select" id="fDep" style="width:92px">
+                        <option value="">DEP</option>
+                        <option>HAN</option><option>SGN</option><option>DAD</option>
+                        <option>PQC</option><option>CXR</option><option>THD</option>
+                    </select>
+
+                    <select class="f-select" id="fArr" style="width:92px">
+                        <option value="">ARR</option>
+                        <option>HAN</option><option>SGN</option><option>DAD</option>
+                        <option>PQC</option><option>THD</option><option>HKG</option><option>ICN</option>
+                    </select>
+
+                    <select class="f-select" id="fDocStatus" style="width:160px">
+                        <option value="">Doc Status (all)</option>
+                        <option value="missing">Missing — chưa upload</option>
+                        <option value="pending">Pending Ack — chờ Capt ack</option>
+                        <option value="done">Done — full ack</option>
+                    </select>
+
+                    <button class="btn-search" onclick="applyFilter()">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        Search
+                    </button>
+
+                    <button class="btn-clear" onclick="clearFilter()">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="1,4 1,10 7,10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/>
+                        </svg>
+                        Clear Filter
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONTENT (split) -->
+        <div class="content" id="content">
+
+            <!-- LEFT: table pane -->
+            <div class="table-pane">
+                <div class="table-wrap" id="tableWrap">
+                    <table id="mainTable">
+                        <thead>
+                            <tr class="group-row" id="groupRow">
+                                <th colspan="2" class="sc1 td-l" style="left:0; padding-left:14px;">Identity</th>
+                                <th colspan="5">Flight Info</th>
+                                <th colspan="3">Primary Docs (LS · GD · PM)</th>
+                                <th colspan="1">Action</th>
+                            </tr>
+                            <tr class="col-row" id="colRow">
+                                <th class="sc1 th-l" style="left:0; min-width:80px; padding-left:14px;">FLIGHT</th>
+                                <th class="sc2 th-l" style="min-width:80px;">ACREG</th>
+                                <th style="min-width:60px;" data-tip="Aircraft Type">ACTYPE</th>
+                                <th style="min-width:88px;" data-tip="EDD (dd/MM/yyyy) — Ngày khai thác (UTC)">EDD</th>
+                                <th style="min-width:60px;" data-tip="ETD (UTC) — giờ bay dự kiến">ETD</th>
+                                <th style="min-width:52px;">DEP</th>
+                                <th style="min-width:52px;">ARR</th>
+                                <th style="min-width:104px;" data-tip="Load Sheet — Rev + Upload time">LS</th>
+                                <th style="min-width:104px;" data-tip="General Declaration — Rev + Upload time">GD</th>
+                                <th style="min-width:104px;" data-tip="Passenger Manifest — Rev + Upload time">PM</th>
+                                <th style="min-width:130px;">ACTION</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- RIGHT: detail pane (empty by default) -->
+            <aside class="detail-pane empty" id="detailPane">
+                <div class="detail-inner">
+                    <!-- Header -->
+                    <div class="dp-head">
+                        <div class="dp-head-l">
+                            <div class="dp-flt">
+                                <span id="dpFlight">--</span>
+                                <span class="dp-reg" id="dpReg">--</span>
+                            </div>
+                            <div class="dp-route">
+                                <span id="dpDep">---</span>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <line x1="5" y1="12" x2="19" y2="12"/>
+                                    <polyline points="12,5 19,12 12,19"/>
+                                </svg>
+                                <span id="dpArr">---</span>
+                            </div>
+                        </div>
+                        <button class="dp-close" onclick="closeDetail()" title="Đóng detail">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Meta row -->
+                    <div class="dp-meta">
+                        <div class="dp-meta-item">
+                            <div class="dp-meta-lbl">EDD</div>
+                            <div class="dp-meta-val" id="dpEdd">--</div>
+                        </div>
+                        <div class="dp-meta-item">
+                            <div class="dp-meta-lbl">ETD (UTC)</div>
+                            <div class="dp-meta-val" id="dpEtd">--</div>
+                        </div>
+                        <div class="dp-meta-item">
+                            <div class="dp-meta-lbl">ACTYPE</div>
+                            <div class="dp-meta-val" id="dpType">--</div>
+                        </div>
+                        <div class="dp-meta-item">
+                            <div class="dp-meta-lbl">ACREG</div>
+                            <div class="dp-meta-val" id="dpReg2" style="color:var(--cyan)">--</div>
+                        </div>
+                    </div>
+
+                    <!-- Tab bar: LS / GD / PM -->
+                    <div class="dp-tab-bar" id="dpTabBar">
+                        <button class="dp-tab active" id="tab-LS" onclick="switchTab('LS')">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                <line x1="3" y1="9" x2="21" y2="9"/>
+                                <line x1="9" y1="21" x2="9" y2="9"/>
+                            </svg>
+                            Load Sheet
+                            <span class="dp-tab-badge" id="badge-LS">—</span>
+                        </button>
+                        <button class="dp-tab" id="tab-GD" onclick="switchTab('GD')">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14,2 14,8 20,8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                            </svg>
+                            Gen. Declaration
+                            <span class="dp-tab-badge" id="badge-GD">—</span>
+                        </button>
+                        <button class="dp-tab" id="tab-PM" onclick="switchTab('PM')">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                            </svg>
+                            Pax Manifest
+                            <span class="dp-tab-badge" id="badge-PM">—</span>
+                        </button>
+                    </div>
+
+                    <!-- Tab body -->
+                    <div class="dp-body">
+                        <div id="docTabContent"><!-- rendered by JS --></div>
+                    </div>
+                </div>
+
+                <!-- Empty placeholder -->
+                <div class="empty-state" id="emptyState">
+                    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14,2 14,8 20,8"/>
+                    </svg>
+                    <p>Chọn 1 chuyến bay ở bảng bên trái để xem chi tiết &amp; tài liệu</p>
+                </div>
+            </aside>
+
+        </div><!-- /content -->
+
+        <!-- STATUS BAR -->
+        <div class="statusbar">
+            <div class="live-wrap">
+                <div class="live-dot"></div>
+                <span>Live</span>
+            </div>
+            <span>Showing: <b id="cntShow" style="color:var(--text-primary)">0</b> / <span id="cntTotal">0</span> flights</span>
+            <span class="sb-right">TOSS POC — Flight Load Control v2.0 (UTC)</span>
+        </div>
+
+    </div><!-- end .main -->
+</div><!-- end .app -->
+
+<!-- ============ UPLOAD PANEL (slide-in from right) ============ -->
+
+<!-- Backdrop: click để đóng -->
+<div class="up-backdrop" id="upBackdrop" onclick="closeUploadPanel()"></div>
+
+<!-- Panel trượt từ phải -->
+<div class="upload-panel" id="uploadPanel">
+    <div class="um-head">
+        <div class="um-title-wrap">
+            <div class="um-title" id="umTitle">Upload Documents</div>
+            <div class="um-subtitle">Flight Load Control — Document Upload</div>
+        </div>
+        <button class="um-close" onclick="closeUploadPanel()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Thông tin chung chuyến bay -->
+    <div class="um-flight-info" id="umFlightInfo">
+        <!-- rendered by JS -->
+    </div>
+
+    <!-- Bảng upload (scrollable) -->
+    <div class="um-body">
+        <div class="um-section-title">Danh sách tài liệu cần upload</div>
+        <div class="um-table-wrap">
+            <table class="um-table">
+                <thead>
+                    <tr>
+                        <th>Document Type</th>
+                        <th>Status</th>
+                        <th>Current Rev</th>
+                        <th>Last Upload</th>
+                        <th>Document Name</th>
+                        <th style="text-align:center">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="umTableBody">
+                    <!-- rendered by JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="um-foot">
+        <button class="um-btn um-btn-cancel" onclick="closeUploadPanel()">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+            Đóng
+        </button>
+    </div>
+</div>
+
+<!-- Hidden file inputs per doc type -->
+<input type="file" id="fileInput-LS" hidden accept=".pdf,.xml,.txt">
+<input type="file" id="fileInput-GD" hidden accept=".pdf,.xml,.txt">
+<input type="file" id="fileInput-PM" hidden accept=".pdf,.xml,.txt">
+
+<script>
+/* =========================================================
+   CLOCK
+   ========================================================= */
+function updateClock() {
+    const n = new Date();
+    const pad = v => String(v).padStart(2,'0');
+    document.getElementById('clock').textContent =
+        pad(n.getUTCHours()) + ':' + pad(n.getUTCMinutes()) + ':' + pad(n.getUTCSeconds()) + 'Z';
+}
+updateClock(); setInterval(updateClock, 1000);
+
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('collapsed');
+    setTimeout(fixStickyOffsets, 260);
+}
+document.getElementById('hideBtn').addEventListener('click', function(e) {
+    e.stopPropagation(); toggleSidebar();
+});
+document.getElementById('expandBtn').addEventListener('click', toggleSidebar);
+document.getElementById('sidebar').addEventListener('click', function(e) {
+    if (this.classList.contains('collapsed')) { e.stopPropagation(); toggleSidebar(); }
+});
+
+/* =========================================================
+   STICKY OFFSETS
+   ========================================================= */
+function fixStickyHeaders() {
+    const groupRow = document.getElementById('groupRow');
+    const colRow   = document.getElementById('colRow');
+    if (!groupRow || !colRow) return;
+    const gh = groupRow.offsetHeight;
+    Array.from(colRow.cells).forEach(c => c.style.top = gh + 'px');
+}
+function fixStickyOffsets() {
+    const secondCols = document.querySelectorAll('.sc2');
+    const firstCell = document.querySelector('tbody .sc1') || document.querySelector('thead .sc1');
+    if (!firstCell) return;
+    const w1 = firstCell.offsetWidth;
+    secondCols.forEach(c => c.style.left = w1 + 'px');
+}
+
+/* =========================================================
+   FILTER COLLAPSE
+   ========================================================= */
+let filterVisible = true;
+function toggleFilter() {
+    filterVisible = !filterVisible;
+    document.getElementById('filterInputs').classList.toggle('collapsed', !filterVisible);
+    document.getElementById('collapseBtn').classList.toggle('flipped',    !filterVisible);
+}
+
+/* =========================================================
+   DATA — cấu trúc theo schema "Man hinh Document"
+   docs chỉ gồm LS, GD, PM (NOTOC ẩn khỏi UI, giữ trong data)
+   ========================================================= */
+function d(rev, up, ackTime) {
+    return { rev, up, ack: ackTime ? 'ok' : (rev ? 'pending' : 'none'), ackTime };
+}
+
+const SAMPLE = [
+    { edd:'23/06/2026', flt:'VN7273', reg:'VNA339', acType:'A321', etd:'00:00', dep:'HAN', arr:'THD',
+      docs:{ LS:d('R01','22/06 23:45','22/06 23:55'), GD:d('R01','22/06 23:45','22/06 23:55'), PM:d('R01','22/06 23:45','22/06 23:55') } },
+
+    { edd:'24/06/2026', flt:'VN120',  reg:'VNA123', acType:'A321', etd:'00:30', dep:'SGN', arr:'HAN',
+      docs:{ LS:d('R02','24/06 00:05','24/06 00:12'), GD:d('R02','24/06 00:05','24/06 00:12'), PM:d('R02','24/06 00:05','24/06 00:14') } },
+
+    { edd:'24/06/2026', flt:'VN220',  reg:'VNA321', acType:'A321', etd:'01:00', dep:'HAN', arr:'SGN',
+      docs:{ LS:d('R02','24/06 00:32',null), GD:d('R02','24/06 00:33',null), PM:d('R02','24/06 00:33',null) } },
+
+    { edd:'24/06/2026', flt:'VN340',  reg:'VNB456', acType:'B787', etd:'03:15', dep:'SGN', arr:'DAD',
+      docs:{ LS:d('R01','24/06 02:50','24/06 03:00'), GD:d('R01','24/06 02:50','24/06 03:00'), PM:d('R01','24/06 02:50','24/06 03:00') } },
+
+    { edd:'24/06/2026', flt:'VN456',  reg:'VNA144', acType:'A321', etd:'04:45', dep:'DAD', arr:'HAN',
+      docs:{ LS:d('R02','24/06 04:15','24/06 04:28'), GD:d('R02','24/06 04:15','24/06 04:28'), PM:d('R02','24/06 04:18','24/06 04:30') } },
+
+    { edd:'24/06/2026', flt:'VN568',  reg:'VNA588', acType:'A321', etd:'06:00', dep:'SGN', arr:'HKG',
+      docs:{ LS:d('R01','24/06 05:32',null), GD:d('R01','24/06 05:32','24/06 05:48'), PM:d('R01','24/06 05:35',null) } },
+
+    { edd:'24/06/2026', flt:'VN608',  reg:'VNB787', acType:'B787', etd:'07:30', dep:'HAN', arr:'ICN',
+      docs:{ LS:d(null,null,null), GD:d(null,null,null), PM:d(null,null,null) } },
+
+    { edd:'24/06/2026', flt:'VN720',  reg:'VNA381', acType:'A320', etd:'09:10', dep:'SGN', arr:'HAN',
+      docs:{ LS:d('R02','24/06 08:42','24/06 08:55'), GD:d('R02','24/06 08:42','24/06 08:55'), PM:d('R02','24/06 08:45','24/06 08:58') } },
+
+    { edd:'24/06/2026', flt:'VN832',  reg:'VNB190', acType:'B787', etd:'10:20', dep:'HAN', arr:'PQC',
+      docs:{ LS:d('R01','24/06 09:58',null), GD:d('R01','24/06 09:58',null), PM:d('R01','24/06 10:00',null) } },
+
+    { edd:'24/06/2026', flt:'VN944',  reg:'VNA777', acType:'A321', etd:'11:45', dep:'SGN', arr:'CXR',
+      docs:{ LS:d('R02','24/06 11:22','24/06 11:30'), GD:d('R02','24/06 11:22','24/06 11:30'), PM:d('R02','24/06 11:24','24/06 11:32') } },
+
+    { edd:'24/06/2026', flt:'VN052',  reg:'VNB350', acType:'A350', etd:'13:00', dep:'HAN', arr:'SGN',
+      docs:{ LS:d('R01','24/06 12:30','24/06 12:42'), GD:d('R01','24/06 12:30','24/06 12:42'), PM:d('R01','24/06 12:32','24/06 12:45') } },
+
+    { edd:'24/06/2026', flt:'VN164',  reg:'VNA201', acType:'A321', etd:'14:10', dep:'SGN', arr:'NRT',
+      docs:{ LS:d(null,null,null), GD:d(null,null,null), PM:d(null,null,null) } },
+
+    { edd:'24/06/2026', flt:'VN278',  reg:'VNA332', acType:'A330', etd:'15:30', dep:'HAN', arr:'DAD',
+      docs:{ LS:d('R02','24/06 14:58','24/06 15:10'), GD:d('R02','24/06 14:58','24/06 15:10'), PM:d('R02','24/06 15:00','24/06 15:12') } },
+
+    { edd:'24/06/2026', flt:'VN386',  reg:'VNA099', acType:'A321', etd:'16:00', dep:'SGN', arr:'PQC',
+      docs:{ LS:d('R02','24/06 15:32','24/06 15:48'), GD:d('R02','24/06 15:32','24/06 15:48'), PM:d('R02','24/06 15:35','24/06 15:50') } },
+
+    { edd:'24/06/2026', flt:'VN492',  reg:'VNA211', acType:'A321', etd:'16:20', dep:'DAD', arr:'SGN',
+      docs:{ LS:d('R01','24/06 15:55','24/06 16:08'), GD:d('R01','24/06 15:55','24/06 16:08'), PM:d('R01','24/06 15:58','24/06 16:10') } },
+
+    { edd:'24/06/2026', flt:'VN550',  reg:'VNB211', acType:'B787', etd:'16:45', dep:'SGN', arr:'BKK',
+      docs:{ LS:d('R02','24/06 16:12',null), GD:d('R02','24/06 16:12',null), PM:d('R02','24/06 16:14',null) } },
+
+    { edd:'24/06/2026', flt:'VN604',  reg:'VNA088', acType:'A320', etd:'17:10', dep:'HAN', arr:'SGN',
+      docs:{ LS:d('R01','24/06 16:40','24/06 16:58'), GD:d('R01','24/06 16:40','24/06 16:58'), PM:d('R01','24/06 16:42','24/06 17:00') } },
+
+    { edd:'24/06/2026', flt:'VN716',  reg:'VNA455', acType:'A321', etd:'17:30', dep:'SGN', arr:'HAN',
+      docs:{ LS:d('R02','24/06 17:02','24/06 17:14'), GD:d('R02','24/06 17:02','24/06 17:14'), PM:d('R02','24/06 17:05','24/06 17:16') } },
+
+    { edd:'24/06/2026', flt:'VN790',  reg:'VNB322', acType:'B787', etd:'18:00', dep:'HAN', arr:'PVG',
+      docs:{ LS:d('R02','24/06 17:25','24/06 17:42'), GD:d('R02','24/06 17:25','24/06 17:42'), PM:d('R02','24/06 17:28','24/06 17:45') } },
+
+    { edd:'24/06/2026', flt:'VN840',  reg:'VNA566', acType:'A321', etd:'18:20', dep:'SGN', arr:'CXR',
+      docs:{ LS:d(null,null,null), GD:d(null,null,null), PM:d(null,null,null) } },
+
+    { edd:'24/06/2026', flt:'VN858',  reg:'VNA630', acType:'A321', etd:'18:40', dep:'HAN', arr:'DAD',
+      docs:{ LS:d('R01','24/06 18:12','24/06 18:24'), GD:d('R01','24/06 18:12','24/06 18:24'), PM:d('R01','24/06 18:14','24/06 18:26') } },
+
+    { edd:'24/06/2026', flt:'VN910',  reg:'VNB410', acType:'B787', etd:'19:10', dep:'SGN', arr:'KUL',
+      docs:{ LS:d('R01','24/06 18:38','24/06 18:55'), GD:d('R01','24/06 18:38','24/06 18:55'), PM:d('R01','24/06 18:40','24/06 18:58') } },
+
+    { edd:'24/06/2026', flt:'VN974',  reg:'VNA722', acType:'A321', etd:'19:30', dep:'HAN', arr:'SGN',
+      docs:{ LS:d('R02','24/06 19:02','24/06 19:12'), GD:d('R02','24/06 19:02','24/06 19:12'), PM:d('R02','24/06 19:04','24/06 19:14') } },
+];
+
+/* =========================================================
+   DOC DEFINITIONS (không có NOTOC)
+   ========================================================= */
+const DOC_DEF = [
+    { key:'LS', name:'Load Sheet',          abbr:'LS', icon:'cyan',
+      svg:'<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/>' },
+    { key:'GD', name:'General Declaration', abbr:'GD', icon:'purple',
+      svg:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>' },
+    { key:'PM', name:'Passenger Manifest',  abbr:'PM', icon:'blue',
+      svg:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>' },
+];
+
+let currentFilter = { flt:'', reg:'', acType:'', dep:'', arr:'', docStatus:'' };
+let activeTab = 'LS';
+
+/* =========================================================
+   FILTER
+   ========================================================= */
+function rowDocAgg(r) {
+    const docs = Object.values(r.docs);
+    if (docs.every(x => x.ack === 'none')) return 'missing';
+    if (docs.some(x => x.ack === 'pending') || docs.some(x => x.ack === 'none')) return 'pending';
+    return 'done';
+}
+
+function currentData() {
+    return SAMPLE.filter(r => {
+        if (currentFilter.flt && !r.flt.toUpperCase().includes(currentFilter.flt.toUpperCase())) return false;
+        if (currentFilter.reg && !r.reg.toUpperCase().includes(currentFilter.reg.toUpperCase())) return false;
+        if (currentFilter.acType && r.acType !== currentFilter.acType) return false;
+        if (currentFilter.dep && r.dep !== currentFilter.dep) return false;
+        if (currentFilter.arr && r.arr !== currentFilter.arr) return false;
+        if (currentFilter.docStatus && rowDocAgg(r) !== currentFilter.docStatus) return false;
+        return true;
+    });
+}
+
+function applyFilter() {
+    currentFilter = {
+        flt:       document.getElementById('fFltNo').value.trim(),
+        reg:       document.getElementById('fReg').value.trim(),
+        acType:    document.getElementById('fAcType').value,
+        dep:       document.getElementById('fDep').value,
+        arr:       document.getElementById('fArr').value,
+        docStatus: document.getElementById('fDocStatus').value,
+    };
+    renderTable(currentData());
+}
+function clearFilter() {
+    ['fFltNo','fReg'].forEach(id => document.getElementById(id).value = '');
+    ['fAcType','fDep','fArr','fDocStatus'].forEach(id => document.getElementById(id).value = '');
+    currentFilter = { flt:'', reg:'', acType:'', dep:'', arr:'', docStatus:'' };
+    renderTable(currentData());
+}
+
+/* =========================================================
+   RENDER TABLE
+   ========================================================= */
+function docCell(doc) {
+    if (!doc || !doc.rev) {
+        return `<div class="doc-cell">
+                  <span class="doc-rev dash">---</span>
+                  <span class="doc-ack ack-na"><span class="ack-dot"></span>MISSING</span>
+                </div>`;
+    }
+    const ackLabel = doc.ack === 'ok' ? `ACK ${doc.ackTime}` : 'AWAIT ACK';
+    const ackCls   = doc.ack === 'ok' ? 'ack-ok' : 'ack-pen';
+    return `<div class="doc-cell">
+              <span class="doc-rev">${doc.rev}</span>
+              <span class="doc-time">${doc.up}</span>
+              <span class="doc-ack ${ackCls}"><span class="ack-dot"></span>${ackLabel}</span>
+            </div>`;
+}
+
+function renderTable(data) {
+    const tbody = document.getElementById('tbody');
+    tbody.innerHTML = '';
+    data.forEach((r, i) => {
+        const tr = document.createElement('tr');
+        tr.dataset.idx = i;
+        // click hàng → mở detail (trừ khi click vào button action)
+        tr.onclick = (e) => { if (!e.target.closest('.tbl-action-btn')) selectRow(i); };
+        tr.innerHTML = `
+            <td class="sc1 td-l" style="padding-left:14px;"><span class="cell-flt">${r.flt}</span></td>
+            <td class="sc2 td-l"><span class="cell-reg">${r.reg}</span></td>
+            <td class="cell-dim">${r.acType}</td>
+            <td class="cell-mono">${r.edd}</td>
+            <td class="cell-mono">${r.etd}Z</td>
+            <td class="cell-dim">${r.dep}</td>
+            <td class="cell-dim">${r.arr}</td>
+            <td>${docCell(r.docs.LS)}</td>
+            <td>${docCell(r.docs.GD)}</td>
+            <td>${docCell(r.docs.PM)}</td>
+            <td class="action-cell">
+                <button class="tbl-action-btn upload" onclick="openUploadModal(${i})" title="Upload tài liệu">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17,8 12,3 7,8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    Upload
+                </button>
+                <button class="tbl-action-btn detail" onclick="selectRow(${i})" title="Xem chi tiết">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    Detail
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+    document.getElementById('cntShow').textContent  = data.length;
+    document.getElementById('cntTotal').textContent = data.length;
+    window._currentRows = data;
+    setTimeout(() => { fixStickyHeaders(); fixStickyOffsets(); }, 0);
+}
+
+/* =========================================================
+   SELECT ROW → DETAIL PANE
+   ========================================================= */
+let selectedIdx = -1;
+function selectRow(idx) {
+    selectedIdx = idx;
+    document.querySelectorAll('#tbody tr').forEach((tr, i) => {
+        tr.classList.toggle('selected', i === idx);
+    });
+    document.getElementById('content').classList.add('split');
+    document.getElementById('detailPane').classList.remove('empty');
+    document.getElementById('emptyState').style.display = 'none';
+    activeTab = 'LS';
+    renderDetail(window._currentRows[idx]);
+    setTimeout(() => { fixStickyHeaders(); fixStickyOffsets(); }, 260);
+}
+
+function closeDetail() {
+    selectedIdx = -1;
+    document.querySelectorAll('#tbody tr').forEach(tr => tr.classList.remove('selected'));
+    document.getElementById('content').classList.remove('split');
+    document.getElementById('detailPane').classList.add('empty');
+    document.getElementById('emptyState').style.display = '';
+    setTimeout(() => { fixStickyHeaders(); fixStickyOffsets(); }, 260);
+}
+
+/* =========================================================
+   RENDER DETAIL (header + tabs)
+   ========================================================= */
+function ackBadgeClass(ack) {
+    if (ack === 'ok')      return 'badge-ok';
+    if (ack === 'pending') return 'badge-pen';
+    return 'badge-na';
+}
+function ackBadgeLabel(ack) {
+    if (ack === 'ok')      return '✓';
+    if (ack === 'pending') return '!';
+    return '—';
+}
+
+function renderDetail(r) {
+    document.getElementById('dpFlight').textContent = r.flt;
+    document.getElementById('dpReg').textContent    = '· ' + r.reg;
+    document.getElementById('dpDep').textContent    = r.dep;
+    document.getElementById('dpArr').textContent    = r.arr;
+    document.getElementById('dpEdd').textContent    = r.edd;
+    document.getElementById('dpEtd').textContent    = r.etd + 'Z';
+    document.getElementById('dpType').textContent   = r.acType;
+    document.getElementById('dpReg2').textContent   = r.reg;
+
+    // Update tab badges
+    DOC_DEF.forEach(def => {
+        const doc = r.docs[def.key];
+        const badge = document.getElementById('badge-' + def.key);
+        badge.className = 'dp-tab-badge ' + ackBadgeClass(doc.ack);
+        badge.textContent = ackBadgeLabel(doc.ack);
+    });
+
+    renderTabContent(r, activeTab);
+}
+
+/* =========================================================
+   TAB SWITCHING
+   ========================================================= */
+function switchTab(tab) {
+    activeTab = tab;
+    // update active class
+    DOC_DEF.forEach(def => {
+        document.getElementById('tab-' + def.key).classList.toggle('active', def.key === tab);
+    });
+    if (selectedIdx >= 0 && window._currentRows) {
+        renderTabContent(window._currentRows[selectedIdx], tab);
+    }
+}
+
+function mockDocName(flt, edd, key) {
+    // Tạo tên file mock: TYPE_FLTNO_YYYYMMDD.pdf
+    const eddClean = edd.split('/').reverse().join(''); // 24/06/2026 → 20260624
+    return `${key}_${flt}_${eddClean}.pdf`;
+}
+
+function renderTabContent(r, tab) {
+    const def = DOC_DEF.find(d => d.key === tab);
+    const doc = r.docs[tab];
+    const hasFile = !!doc.rev;
+
+    const statusCls   = doc.ack === 'ok' ? 'ok' : doc.ack === 'pending' ? 'pending' : 'missing';
+    const statusLabel = doc.ack === 'ok' ? 'ACK' : doc.ack === 'pending' ? 'AWAIT ACK' : 'MISSING';
+
+    const fileName  = hasFile ? mockDocName(r.flt, r.edd, tab) : null;
+    const revStr    = hasFile ? doc.rev : '—';
+    const dateStr   = hasFile ? doc.up + 'Z' : '—';
+
+    const content = document.getElementById('docTabContent');
+    content.innerHTML = `
+        <div class="doc-table-wrap">
+            <table class="doc-table">
+                <thead>
+                    <tr>
+                        <th>Document Name</th>
+                        <th>Upload Date</th>
+                        <th>Rev</th>
+                        <th>Status</th>
+                        <th style="text-align:center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            ${hasFile
+                                ? `<div class="dt-name">
+                                       <span class="dt-name-main">${def.name}</span>
+                                       <span class="dt-name-sub">${fileName}</span>
+                                   </div>`
+                                : `<span class="dt-empty">Chưa có tài liệu</span>`
+                            }
+                        </td>
+                        <td><span class="dt-date">${dateStr}</span></td>
+                        <td><span class="dt-rev ${hasFile ? '' : 'empty'}">${revStr}</span></td>
+                        <td>
+                            <span class="dt-status ${statusCls}">
+                                <span class="dt-dot"></span>
+                                ${statusLabel}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="dt-action-wrap">
+                                <button class="dt-btn" ${hasFile ? '' : 'disabled'}
+                                    onclick="alert('Xem tài liệu ${tab}: ${hasFile ? fileName : ''} (mock)')">
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                    View
+                                </button>
+                                <button class="dt-btn" ${hasFile ? '' : 'disabled'}
+                                    onclick="alert('Download tài liệu ${tab}: ${hasFile ? fileName : ''} (mock)')">
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="7,10 12,15 17,10"/>
+                                        <line x1="12" y1="15" x2="12" y2="3"/>
+                                    </svg>
+                                    Download
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+/* =========================================================
+   UPLOAD MODAL (redesigned)
+   ========================================================= */
+function openUploadModal(idx) {
+    const r = window._currentRows[idx];
+    if (!r) return;
+
+    // Update title
+    document.getElementById('umTitle').textContent = `Upload Documents — ${r.flt}`;
+
+    // Render flight info
+    document.getElementById('umFlightInfo').innerHTML = `
+        <div class="um-fi-item">
+            <div class="um-fi-lbl">Flight</div>
+            <div class="um-fi-val cyan">${r.flt}</div>
+        </div>
+        <div class="um-fi-sep"></div>
+        <div class="um-fi-item">
+            <div class="um-fi-lbl">Aircraft Reg</div>
+            <div class="um-fi-val">${r.reg}</div>
+        </div>
+        <div class="um-fi-sep"></div>
+        <div class="um-fi-item">
+            <div class="um-fi-lbl">A/C Type</div>
+            <div class="um-fi-val">${r.acType}</div>
+        </div>
+        <div class="um-fi-sep"></div>
+        <div class="um-fi-item">
+            <div class="um-fi-lbl">Route</div>
+            <div class="um-fi-val">${r.dep} → ${r.arr}</div>
+        </div>
+        <div class="um-fi-sep"></div>
+        <div class="um-fi-item">
+            <div class="um-fi-lbl">EDD</div>
+            <div class="um-fi-val">${r.edd}</div>
+        </div>
+        <div class="um-fi-sep"></div>
+        <div class="um-fi-item">
+            <div class="um-fi-lbl">ETD (UTC)</div>
+            <div class="um-fi-val">${r.etd}Z</div>
+        </div>
+    `;
+
+    // Render table rows
+    const tbody = document.getElementById('umTableBody');
+    tbody.innerHTML = '';
+
+    DOC_DEF.forEach(def => {
+        const doc = r.docs[def.key];
+        const hasFile = !!doc.rev;
+        const statusCls   = doc.ack === 'ok' ? 'ok' : doc.ack === 'pending' ? 'pending' : 'missing';
+        const statusLabel = doc.ack === 'ok' ? 'ACK' : doc.ack === 'pending' ? 'AWAIT ACK' : 'MISSING';
+        const fileName    = hasFile ? mockDocName(r.flt, r.edd, def.key) : null;
+        const revStr      = hasFile ? doc.rev : '—';
+        const dateStr     = hasFile ? doc.up + 'Z' : '—';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>
+                <div class="um-doc-type">
+                    <div class="um-doc-icon ${def.icon}">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            ${def.svg}
+                        </svg>
+                    </div>
+                    <div class="um-doc-label">
+                        <div class="um-doc-name">${def.name}</div>
+                        <div class="um-doc-abbr">${def.abbr}</div>
+                    </div>
+                </div>
+            </td>
+            <td>
+                <span class="dt-status ${statusCls}">
+                    <span class="dt-dot"></span>${statusLabel}
+                </span>
+            </td>
+            <td><span class="dt-rev ${hasFile ? '' : 'empty'}">${revStr}</span></td>
+            <td><span class="dt-date">${dateStr}</span></td>
+            <td>
+                <span class="um-file-name ${hasFile ? '' : 'empty'}" id="um-fname-${def.key}">
+                    ${hasFile ? fileName : 'Chưa có file'}
+                </span>
+            </td>
+            <td>
+                <div class="um-action-cell">
+                    <button class="um-choose-btn" onclick="document.getElementById('fileInput-${def.key}').click()">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17,8 12,3 7,8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        Choose File
+                    </button>
+                    <button class="um-upload-btn" id="um-upload-${def.key}"
+                        onclick="doUpload('${def.key}','${r.flt}')">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="17,8 12,3 7,8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        </svg>
+                        Upload
+                    </button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    // Mở slide-in panel
+    openUploadPanel();
+}
+
+/* File input change listeners */
+['LS','GD','PM'].forEach(key => {
+    document.getElementById('fileInput-' + key).addEventListener('change', function() {
+        const name = this.files && this.files[0] ? this.files[0].name : null;
+        const label = document.getElementById('um-fname-' + key);
+        if (label && name) {
+            label.textContent = name;
+            label.classList.remove('empty');
+        }
+    });
+});
+
+function doUpload(key, flt) {
+    const input = document.getElementById('fileInput-' + key);
+    const fileName = input && input.files && input.files[0] ? input.files[0].name : null;
+    alert(`Upload (mock)\nDoc: ${key}\nFlight: ${flt}\nFile: ${fileName || '(chưa chọn file)'}`);
+}
+
+/* =========================================================
+   UPLOAD PANEL — open / close
+   ========================================================= */
+function openUploadPanel() {
+    document.getElementById('uploadPanel').classList.add('open');
+    document.getElementById('upBackdrop').classList.add('visible');
+    document.body.style.overflow = 'hidden';
+}
+function closeUploadPanel() {
+    document.getElementById('uploadPanel').classList.remove('open');
+    document.getElementById('upBackdrop').classList.remove('visible');
+    document.body.style.overflow = '';
+}
+// ESC key đóng panel
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeUploadPanel();
+});
+
+/* =========================================================
+   INIT
+   ========================================================= */
+window.addEventListener('DOMContentLoaded', () => {
+    renderTable(currentData());
+});
+window.addEventListener('resize', () => {
+    fixStickyHeaders();
+    fixStickyOffsets();
+});
+</script>
+</body>
+</html>
